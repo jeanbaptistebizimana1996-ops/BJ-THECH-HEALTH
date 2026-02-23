@@ -2,7 +2,6 @@ import streamlit as st
 import google.generativeai as genai
 from datetime import datetime
 from fpdf import FPDF
-import re
 
 # 1. INITIALIZE SYSTEM STATE
 if "db" not in st.session_state:
@@ -18,69 +17,72 @@ if "system_locked" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# MASTER KEYS
 MASTER_RECOVERY_KEY = "ndihanomysystem"
-HACK_KEYWORDS = ["DROP", "DELETE", "SELECT *", "<script>", "OR 1=1"]
 
-# Configure Google Generative AI
+# Configure Google AI
 genai.configure(api_key="AIzaSyDUxyCei7WEpFar85ShrHV5I6f7Lmzo0Oo")
 model = genai.GenerativeModel("gemini-pro")
 
-# Helper function for login attempts
-def handle_login_attempt():
-    st.session_state.login_attempts += 1
-    if st.session_state.login_attempts >= 4:
-        st.session_state.system_locked = True
-    st.rerun()
+# 2. UI CONFIG
+st.set_page_config(page_title="BJ TECH Smart Health", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. PDF GENERATOR
-def create_pdf(p_id, p_data):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt=st.session_state.hosp_name, ln=True, align='C')
-    pdf.set_font("Arial", size=10)
-    pdf.cell(200, 10, txt=f"Report ID: BJ-{p_id} | Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True, align='C')
-    pdf.ln(10)
-    pdf.set_fill_color(230, 230, 230)
-    pdf.cell(0, 10, txt=f"PATIENT: {p_data['izina']}", ln=True, fill=True)
-    pdf.cell(0, 10, txt=f"Phone: {p_data['phone']}", ln=True)
-    pdf.ln(5)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, txt="DIAGNOSIS & PRESCRIPTION:", ln=True)
-    pdf.set_font("Arial", size=11)
-    clean_res = p_data['results'].encode('latin-1', 'replace').decode('latin-1')
-    pdf.multi_cell(0, 10, txt=clean_res)
-    pdf.ln(20)
-    pdf.cell(0, 10, txt="Hospital Stamp & Signature: ____________________", ln=True, align='R')
-    return pdf.output(dest='S').encode('latin-1')
-
-# 3. SECURITY MONITOR
-def check_for_hacking(user_input):
-    for word in HACK_KEYWORDS:
-        if word.upper() in user_input.upper():
-            return True
-    return False
-
-# 4. MOBILE-FRIENDLY UI STYLE
-st.set_page_config(
-    page_title="BJ TECH Smart Health",
-    page_icon="🏥",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
-
+# CSS KOSOYE (Nta kosa ririmo)
 st.markdown("""
-    <style>
-    /* Responsive adjustment for Mobile */
-    @media (max-width: 600px) {
-        .main-title { font-size: 22px !important; }
-        .stButton button { width: 100% !important; border-radius: 10px; }
-        .hacker-alert { font-size: 20px !important; padding: 20px !important; }
-    }
+<style>
+    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .main-title { font-size: 28px; color: #1a5fb4; text-align: center; font-weight: bold; }
+    .stButton button { width: 100%; border-radius: 10px; }
+    .footer-bj { position: fixed; left: 10px; bottom: 5px; color: #888; font-size: 10px; }
+</style>
+""", unsafe_allow_html=True)
+
+# 3. SIDEBAR
+st.sidebar.title("🏥 BJ TECH")
+st.sidebar.write(f"🕒 {datetime.now().strftime('%H:%M:%S')}")
+role = st.sidebar.selectbox("HITAMO:", ["🏠 Kiosk (Patient)", "🧪 Laboratory", "💊 Pharmacy", "⚙️ Admin Panel"])
+
+# --- PAGE: KIOSK ---
+if role == "🏠 Kiosk (Patient)":
+    st.markdown(f"<div class='main-title'>{st.session_state.hosp_name}</div>", unsafe_allow_html=True)
+    p_id = st.text_input("Enter Patient ID (119958):", placeholder="Type ID here...")
     
-    @keyframes blinker { 50% { opacity: 0; } }
-    .hacker-alert { background-color: #ff0000; color: white; padding: 30px; text-align: center; font-size: 30px; font-weight: bold; animation: blinker 0.8s linear infinite; border-radius: 15px; border: 4px solid black; }
-    
-    header {visibility: hidden;} 
-    #MainMenu
+    if p_id in st.session_state.db:
+        p = st.session_state.db[p_id]
+        st.success(f"Muraho {p['izina']}!")
+        
+        for m in st.session_state.messages:
+            with st.chat_message(m["role"]): st.markdown(m["content"])
+        
+        if prompt := st.chat_input("Bwira AI uko umerewe..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            try:
+                response = model.generate_content(prompt)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+            except:
+                st.error("AI Error")
+            st.rerun()
+
+# --- PAGE: LABORATORY ---
+elif role == "🧪 Laboratory":
+    st.title("🧪 Lab Access")
+    pwd = st.text_input("Lab PIN:", type="password")
+    if pwd == st.session_state.passwords["lab"]:
+        lab_id = st.text_input("Patient ID:")
+        if lab_id in st.session_state.db:
+            res = st.multiselect("Diagnostic:", ["Malaria", "Typhoid", "Negative"])
+            if st.button("Save Results"):
+                st.session_state.db[lab_id]["results"] = f"Lab: {', '.join(res)}"
+                st.success("Byabitswe!")
+
+# --- PAGE: ADMIN PANEL ---
+elif role == "⚙️ Admin Panel":
+    st.title("⚙️ Admin")
+    a_pwd = st.text_input("Admin PIN:", type="password")
+    if a_pwd == st.session_state.passwords["admin"]:
+        st.write("Reports List:")
+        for pid in st.session_state.db:
+            st.write(f"ID: {pid} - {st.session_state.db[pid]['izina']}")
+
+st.markdown("<div class='footer-bj'>POWERED BY BJ TECH LTD</div>", unsafe_allow_html=True)
