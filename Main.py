@@ -4,7 +4,7 @@ from datetime import datetime
 from fpdf import FPDF
 import re
 
-# 1. INITIALIZE SYSTEM STATE (Kugira ngo system itagira ibyo ibura)
+# 1. INITIALIZE SYSTEM STATE
 if "db" not in st.session_state:
     st.session_state.db = {"119958": {"izina": "Habineza", "phone": "+250780000000", "results": "Nta kintu kirandikwa", "date": "2026-02-23"}}
 if "passwords" not in st.session_state:
@@ -34,12 +34,10 @@ def handle_login_attempt():
         st.session_state.system_locked = True
     st.rerun()
 
-# 2. PDF GENERATOR (Kunoza raporo itagira error)
+# 2. PDF GENERATOR
 def create_pdf(p_id, p_data):
     pdf = FPDF()
-    # Add a font if Arial is not found by default. For example:
-    # pdf.add_font('Arial', '', 'Arial.ttf', uni=True)
-    # pdf.add_font('Arial', 'B', 'Arialbd.ttf', uni=True)
+    pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(200, 10, txt=st.session_state.hosp_name, ln=True, align='C')
     pdf.set_font("Arial", size=10)
@@ -52,23 +50,22 @@ def create_pdf(p_id, p_data):
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, txt="DIAGNOSIS & PRESCRIPTION:", ln=True)
     pdf.set_font("Arial", size=11)
-    # Gukuramo inyuguti zatera error muri PDF (Unicode Fix)
     clean_res = p_data['results'].encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 10, txt=clean_res)
     pdf.ln(20)
     pdf.cell(0, 10, txt="Hospital Stamp & Signature: ____________________", ln=True, align='R')
     return pdf.output(dest='S').encode('latin-1')
 
-# 3. SECURITY MONITOR (Kumenya niba bari gu-hackinga)
+# 3. SECURITY MONITOR
 def check_for_hacking(user_input):
     for word in HACK_KEYWORDS:
         if word.upper() in user_input.upper():
             return True
     return False
 
-# 4. UI STYLE (Hacker Alert & Branding)
+# 4. UI STYLE (Fixed Syntax Error)
 st.set_page_config(page_title="BJ TECH Smart Health", layout="wide")
-st.markdown(\"\"\"
+st.markdown("""
     <style>
     @keyframes blinker { 50% { opacity: 0; } }
     .hacker-alert { background-color: #ff0000; color: white; padding: 40px; text-align: center; font-size: 35px; font-weight: bold; animation: blinker 0.8s linear infinite; border-radius: 15px; border: 5px solid black; }
@@ -76,7 +73,7 @@ st.markdown(\"\"\"
     .stApp { background-image: url("https://img.icons8.com/ios-filled/500/1a5fb4/fingerprint.png"); background-repeat: no-repeat; background-position: center; background-size: 250px; background-color: rgba(255,255,255,0.96); background-blend-mode: overlay; }
     .footer-bj { position: fixed; left: 20px; bottom: 10px; color: #333; font-size: 11px; font-weight: bold; font-family: monospace; }
     </style>
-    \"\"\", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # 5. LOCKDOWN SCREEN
 if st.session_state.system_locked:
@@ -88,13 +85,13 @@ if st.session_state.system_locked:
         st.rerun()
     st.stop()
 
-# 6. SIDEBAR (Isaha n'Itariki)
+# 6. SIDEBAR
 st.sidebar.markdown(f"### 🕒 {datetime.now().strftime('%H:%M:%S')}")
 st.sidebar.markdown(f"📅 {datetime.now().strftime('%d/%m/%Y')}")
 st.sidebar.markdown("---")
 role = st.sidebar.radio("BJ TECH MENU:", ["🏠 Kiosk (Patient)", "🧪 Laboratory", "💊 Pharmacy", "⚙️ Admin Panel"])
 
-# --- PAGE: KIOSK (With Input Security) ---
+# --- PAGE: KIOSK ---
 if role == "🏠 Kiosk (Patient)":
     st.markdown(f"<h1 style='color:#1a5fb4; text-align:center;'>{st.session_state.hosp_name}</h1>", unsafe_allow_html=True)
     p_id = st.text_input("Scan ID / Fingerprint:", key="kiosk_id_input")
@@ -110,7 +107,6 @@ if role == "🏠 Kiosk (Patient)":
             st.session_state.messages = []
             st.rerun()
         
-        # Chat Interface
         for m in st.session_state.messages:
             with st.chat_message(m["role"]): st.markdown(m["content"])
         
@@ -119,13 +115,11 @@ if role == "🏠 Kiosk (Patient)":
                 st.session_state.system_locked = True
                 st.rerun()
             st.session_state.messages.append({"role": "user", "content": prompt})
-            
-            # AI Response logic (Gemini Integration)
             try:
                 response = model.generate_content(prompt)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
-                st.error(f"AI Error: {e}")
+                st.error(f"AI Error: API Key may be invalid or quota reached.")
             st.rerun()
 
 # --- PAGE: LABORATORY ---
@@ -151,7 +145,7 @@ elif role == "💊 Pharmacy":
     pwd = st.text_input("Pharmacy PIN:", type="password")
     if pwd == st.session_state.passwords["pharmacy"]:
         st.session_state.login_attempts = 0
-        st.info("Pharmacy section is under development.")
+        st.info("Pharmacy section: Patient results will appear here.")
     elif pwd != "":
         if st.button("Verify PIN"):
             handle_login_attempt()
