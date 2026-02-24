@@ -5,12 +5,12 @@ import pytz
 import time
 import pandas as pd
 import random
+import plotly.graph_objects as go
 
 # ===============================
-# PAGE CONFIG
+# CONFIG
 # ===============================
-st.set_page_config(page_title="BJ TECH HOSPITAL OS v7.0", layout="wide")
-
+st.set_page_config(page_title="BJ TECH HEALTH OS V8", layout="wide")
 KIGALI = pytz.timezone("Africa/Kigali")
 
 # ===============================
@@ -18,16 +18,6 @@ KIGALI = pytz.timezone("Africa/Kigali")
 # ===============================
 if "patients" not in st.session_state:
     st.session_state.patients = {}
-
-if "passwords" not in st.session_state:
-    st.session_state.passwords = {
-        "admin": "admin.v7",
-        "lab": "lab.v7",
-        "pharmacy": "phar.v7"
-    }
-
-if "reboot_key" not in st.session_state:
-    st.session_state.reboot_key = "reboot.v7"
 
 if "attempts" not in st.session_state:
     st.session_state.attempts = 0
@@ -39,34 +29,45 @@ if "page" not in st.session_state:
     st.session_state.page = "HOME"
 
 # ===============================
-# AI CONFIG
-# ===============================
-AI_ONLINE = True
-try:
-    api_key = st.secrets.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
-except:
-    AI_ONLINE = False
-
-# ===============================
-# STYLE
+# DARK CYBER STYLE
 # ===============================
 st.markdown("""
 <style>
 header, footer {visibility:hidden;}
+.stApp {background-color:#0a0f1f;color:white;}
 
-.stApp {
-background: linear-gradient(135deg,#dff6ff,#ffffff);
+.cyber-title {
+font-size:45px;
+font-weight:bold;
+text-align:center;
+color:#00bfff;
+animation: glowMove 4s linear infinite;
+text-shadow:0 0 20px #00bfff;
+}
+
+@keyframes glowMove {
+0%{transform:translateX(-10px);}
+50%{transform:translateX(10px);}
+100%{transform:translateX(-10px);}
+}
+
+.app-button button{
+background:linear-gradient(145deg,#001f3f,#003366);
+color:#00d9ff;
+height:120px;
+border-radius:20px;
+font-size:18px;
+font-weight:bold;
+box-shadow:0 0 15px #00bfff;
 }
 
 .ai-ring {
-width:70px;height:70px;border-radius:50%;
+width:60px;height:60px;
+border-radius:50%;
 margin:auto;
-background:conic-gradient(red,orange,yellow,green,blue,violet,red);
-animation:spin 3s linear infinite;
+background:conic-gradient(#00bfff,#0044ff,#00bfff);
+animation:spin 2s linear infinite;
 }
-
 @keyframes spin {100%{transform:rotate(360deg);}}
 
 .locked-screen{
@@ -83,149 +84,133 @@ z-index:9999;
 """, unsafe_allow_html=True)
 
 # ===============================
-# LOCKDOWN MODE
+# LOCKDOWN
 # ===============================
 if st.session_state.locked:
     st.markdown("""
     <div class="locked-screen">
-    🚨 HOSPITAL SERVER LOCKED 🚨<br>
-    Security Breach Detected
+    🚨 CYBER HOSPITAL SERVER LOCKED 🚨
     </div>
     """, unsafe_allow_html=True)
-
-    key = st.text_input("ENTER REBOOT KEY", type="password")
-    if st.button("REBOOT SERVER"):
-        if key == st.session_state.reboot_key:
+    key = st.text_input("ENTER MASTER KEY", type="password")
+    if st.button("REBOOT SYSTEM"):
+        if key == "V8MASTER":
             st.session_state.locked = False
             st.session_state.attempts = 0
             st.rerun()
         else:
-            st.error("INVALID REBOOT KEY")
+            st.error("INVALID KEY")
     st.stop()
 
 # ===============================
 # HEADER
 # ===============================
-st.title("🩺 BJ TECH REAL HOSPITAL OS v7.0")
+st.markdown("<div class='cyber-title'>BJ TECH HEALTH OS V8</div>", unsafe_allow_html=True)
 
 now = datetime.now(KIGALI).strftime("%H:%M:%S")
-st.markdown(f"### 🕒 Kigali Time: {now}")
+st.markdown(f"<h4 style='text-align:center;color:#00bfff;'>KIGALI TIME: {now}</h4>", unsafe_allow_html=True)
 
-if AI_ONLINE:
-    st.markdown("<div class='ai-ring'></div>", unsafe_allow_html=True)
-    st.success("AI SERVER ONLINE")
-else:
-    st.error("AI OFFLINE")
-
+st.markdown("<div class='ai-ring'></div>", unsafe_allow_html=True)
 st.divider()
 
 # ===============================
-# NAVIGATION
+# HOME – APP STYLE ICONS
 # ===============================
-c1,c2,c3,c4 = st.columns(4)
-if c1.button("HOME"): st.session_state.page="HOME"
-if c2.button("LAB"): st.session_state.page="LAB"
-if c3.button("PHARMACY"): st.session_state.page="PHARMACY"
-if c4.button("ADMIN"): st.session_state.page="ADMIN"
+if st.session_state.page == "HOME":
 
-st.divider()
+    c1,c2,c3,c4 = st.columns(4)
 
-# ===============================
-# HOME – PATIENT MONITOR
-# ===============================
-if st.session_state.page=="HOME":
-    st.subheader("Patient Registration & Monitoring")
+    with c1:
+        st.markdown("<div class='app-button'>", unsafe_allow_html=True)
+        if st.button("🩺 PATIENTS"):
+            st.session_state.page="PATIENTS"
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    name = st.text_input("Full Name")
-    phone = st.text_input("Phone Number")
+    with c2:
+        st.markdown("<div class='app-button'>", unsafe_allow_html=True)
+        if st.button("🧪 LAB"):
+            st.session_state.page="LAB"
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.button("REGISTER PATIENT"):
-        pid = phone[-6:]
-        st.session_state.patients[pid] = {
-            "Name": name,
-            "BP": "N/A",
-            "Temp": "N/A",
-            "Status": "New"
-        }
-        st.success("Patient Registered Successfully")
+    with c3:
+        st.markdown("<div class='app-button'>", unsafe_allow_html=True)
+        if st.button("💊 PHARMACY"):
+            st.session_state.page="PHARMACY"
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.session_state.patients:
-        st.write(pd.DataFrame.from_dict(st.session_state.patients, orient="index"))
-
-    st.divider()
-    st.subheader("🖐 Fingerprint Biometric Scan")
-
-    if st.button("SCAN PATIENT"):
-        with st.spinner("Scanning Fingerprint..."):
-            time.sleep(2)
-            st.audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3")
-            bp = f"{random.randint(110,140)}/{random.randint(70,90)}"
-            temp = f"{random.uniform(36.5,39.5):.1f}"
-            st.success(f"BP: {bp} | Temp: {temp}")
+    with c4:
+        st.markdown("<div class='app-button'>", unsafe_allow_html=True)
+        if st.button("⚙️ ADMIN"):
+            st.session_state.page="ADMIN"
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # ===============================
-# LAB
+# LIVE MONITORING DASHBOARD
+# ===============================
+elif st.session_state.page == "PATIENTS":
+
+    st.subheader("📊 LIVE PATIENT MONITORING")
+
+    x = list(range(20))
+    y = [random.randint(60,100) for _ in x]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x,y=y,mode='lines'))
+    fig.update_layout(template="plotly_dark",
+                      title="Heart Rate Monitor (BPM)",
+                      xaxis_title="Time",
+                      yaxis_title="BPM")
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    if st.button("BACK"):
+        st.session_state.page="HOME"
+
+# ===============================
+# LAB LOGIN
 # ===============================
 elif st.session_state.page=="LAB":
-    pw = st.text_input("Lab Password", type="password")
+    pw = st.text_input("LAB PASSWORD", type="password")
     if st.button("LOGIN"):
-        if pw==st.session_state.passwords["lab"]:
-            st.success("Lab Access Granted")
+        if pw=="labV8":
+            st.success("LAB ACCESS GRANTED")
         else:
             st.session_state.attempts+=1
             if st.session_state.attempts>=3:
                 st.session_state.locked=True
                 st.rerun()
-            st.error("Wrong Password")
+            st.error("WRONG PASSWORD")
 
 # ===============================
-# PHARMACY
+# PHARMACY LOGIN
 # ===============================
 elif st.session_state.page=="PHARMACY":
-    pw = st.text_input("Pharmacy Password", type="password")
+    pw = st.text_input("PHARMACY PASSWORD", type="password")
     if st.button("LOGIN"):
-        if pw==st.session_state.passwords["pharmacy"]:
-            st.success("Pharmacy Access Granted")
+        if pw=="pharV8":
+            st.success("PHARMACY ACCESS GRANTED")
         else:
             st.session_state.attempts+=1
             if st.session_state.attempts>=3:
                 st.session_state.locked=True
                 st.rerun()
-            st.error("Wrong Password")
+            st.error("WRONG PASSWORD")
 
 # ===============================
-# ADMIN SERVER CONTROL
+# ADMIN
 # ===============================
 elif st.session_state.page=="ADMIN":
-    pw = st.text_input("Admin Password", type="password")
+    pw = st.text_input("ADMIN PASSWORD", type="password")
     if st.button("LOGIN"):
-        if pw==st.session_state.passwords["admin"]:
-            st.success("ADMIN SERVER ACCESS GRANTED")
-
-            st.subheader("Server Settings")
-
-            new_admin = st.text_input("New Admin Password")
-            new_lab = st.text_input("New Lab Password")
-            new_phar = st.text_input("New Pharmacy Password")
-            new_reboot = st.text_input("New Reboot Key")
-
-            if st.button("UPDATE SERVER SETTINGS"):
-                if new_admin: st.session_state.passwords["admin"]=new_admin
-                if new_lab: st.session_state.passwords["lab"]=new_lab
-                if new_phar: st.session_state.passwords["pharmacy"]=new_phar
-                if new_reboot: st.session_state.reboot_key=new_reboot
-                st.success("Server Updated Successfully")
-
-            st.divider()
-            st.write("LIVE DATABASE")
-            st.write(pd.DataFrame.from_dict(st.session_state.patients, orient="index"))
-
+        if pw=="adminV8":
+            st.success("ADMIN ACCESS GRANTED")
+            st.write("SERVER CONTROL PANEL ACTIVE")
         else:
             st.session_state.attempts+=1
             if st.session_state.attempts>=3:
                 st.session_state.locked=True
                 st.rerun()
-            st.error("Wrong Admin Password")
+            st.error("WRONG PASSWORD")
 
 st.markdown("---")
-st.caption("BJ TECH REAL HOSPITAL SERVER OS v7.0 | ULTRA SECURE")
+st.caption("BJ TECH HEALTH OS V8 ULTRA | CYBER DARK HOSPITAL EDITION")
