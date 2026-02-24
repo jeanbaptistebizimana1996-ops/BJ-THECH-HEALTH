@@ -16,9 +16,6 @@ if "passwords" not in st.session_state:
         "phar": "phar.2026",
     }
 
-if "login_attempts" not in st.session_state:
-    st.session_state.login_attempts = 0
-
 if "system_shutdown" not in st.session_state:
     st.session_state.system_shutdown = False
 
@@ -27,6 +24,9 @@ if "current_user_id" not in st.session_state:
 
 if "current_page" not in st.session_state:
     st.session_state.current_page = "🏠 HOME"
+
+if "scan_status" not in st.session_state:
+    st.session_state.scan_status = "idle" # idle, scanning, success, error
 
 # SECURITY KEYS
 REBOOT_KEY = "ndaharimysystem2026"
@@ -45,14 +45,29 @@ except Exception:
 # 3. UI STYLE & CONFIGURATION
 st.set_page_config(page_title="BJ Nano v8 Health Rwanda", layout="wide")
 
-# CSS for Biometric Background, Scrolling Text, and Animations
-st.markdown(\"\"\"
+# Function to play sounds
+def play_sound(sound_type):
+    urls = {
+        "error": "https://www.soundjay.com/buttons/beep-05.mp3",
+        "success": "https://www.soundjay.com/buttons/button-3.mp3",
+        "shutdown": "https://www.soundjay.com/communication/alarm-clock-elapsed-01.mp3"
+    }
+    st.markdown(f'<audio autoplay><source src="{urls[sound_type]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+
+# Dynamic Background Color based on Scan Status
+bg_color = "rgba(10,10,10,0.9)"
+if st.session_state.scan_status == "scanning":
+    bg_color = "rgba(255, 0, 0, 0.4)" # Red while scanning
+elif st.session_state.scan_status == "success":
+    bg_color = "rgba(0, 255, 0, 0.4)" # Green on success
+
+st.markdown(f"""
 <style>
-    header {visibility:hidden;}
-    footer {visibility:hidden;}
+    header {{visibility:hidden;}}
+    footer {{visibility:hidden;}}
     
-    .stApp {
-        background: radial-gradient(circle at center, rgba(10,10,10,0.9) 0%, rgba(26,26,26,0.95) 100%), 
+    .stApp {{
+        background: radial-gradient(circle at center, {bg_color} 0%, rgba(26,26,26,0.95) 100%), 
                     url("https://img.icons8.com/ios-filled/500/00d4ff/fingerprint.png");
         background-repeat: no-repeat;
         background-position: center;
@@ -60,9 +75,10 @@ st.markdown(\"\"\"
         background-attachment: fixed;
         background-blend-mode: overlay;
         color: #e0e0e0;
+        transition: background 0.5s ease;
     }
 
-    .scrolling-text {
+    .scrolling-text {{
         width: 100%;
         overflow: hidden;
         white-space: nowrap;
@@ -73,63 +89,48 @@ st.markdown(\"\"\"
         color: #00d4ff;
         padding: 10px 0;
         border-bottom: 1px solid #00d4ff;
-    }
+    }}
 
-    @keyframes scroll {
-        0% { transform: translateX(100%); }
-        100% { transform: translateX(-100%); }
-    }
+    @keyframes scroll {{
+        0% {{ transform: translateX(100%); }}
+        100% {{ transform: translateX(-100%); }}
+    }}
 
-    .stethoscope {
+    .stethoscope {{
         font-size: 70px;
         text-align: center;
         animation: pulse 1.5s infinite;
         color: #00d4ff;
-        margin-bottom: -10px;
-    }
+    }}
 
-    @keyframes pulse {
-        0% { transform: scale(1); opacity: 0.8; }
-        50% { transform: scale(1.1); opacity: 1; }
-        100% { transform: scale(1); opacity: 0.8; }
-    }
-
-    .ai-indicator {
-        width: 12px;
-        height: 12px;
-        background-color: #00ff00;
-        border-radius: 50%;
-        display: inline-block;
-        box-shadow: 0 0 8px #00ff00;
-        animation: blink 2s infinite;
-    }
-
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @keyframes pulse {{
+        0% {{ transform: scale(1); opacity: 0.8; }}
+        50% {{ transform: scale(1.1); opacity: 1; }}
+        100% {{ transform: scale(1); opacity: 0.8; }}
+    }}
 </style>
 
 <div class="scrolling-text">
-    BJ Nano v8 Health Rwanda | Biometric Fingerprint System | European Hospital Standard | V8 Engine Active
+    BJ Nano v8 Health Rwanda | Biometric Fingerprint System | V8 Engine | Professional European Standard
 </div>
-\"\"\", unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # 4. CYBER SECURITY
 if st.session_state.system_shutdown:
-    st.markdown("<div style='background:#d00000;color:white;height:100vh;width:100vw;position:fixed;top:0;left:0;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;'><h1>🚨 SYSTEM LOCKED 🚨</h1><p>Security Breach Detected</p></div>", unsafe_allow_html=True)
+    play_sound("shutdown")
+    st.markdown("<div style='background:#d00000;color:white;height:100vh;width:100vw;position:fixed;top:0;left:0;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;'><h1>🚨 SYSTEM AUTO SHUTDOWN 🚨</h1><p>Security Breach Detected</p></div>", unsafe_allow_html=True)
     reboot = st.text_input("Enter Reboot Key:", type="password")
     if st.button("REBOOT"):
         if reboot == REBOOT_KEY:
             st.session_state.system_shutdown = False
-            st.session_state.login_attempts = 0
             st.rerun()
     st.stop()
 
-# 5. HEADER (KIGALI TIME & STETHOSCOPE)
+# 5. HEADER
 kigali_tz = pytz.timezone('Africa/Kigali')
 kigali_time = datetime.now(kigali_tz).strftime("%H:%M:%S")
-
 st.markdown("<div class='stethoscope'>🩺</div>", unsafe_allow_html=True)
 st.markdown(f"<h2 style='text-align:center;color:#00d4ff;margin-top:0;'>{kigali_time}</h2>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center;'><span class='ai-indicator'></span> AI Available (Gemini 2.5)</p>", unsafe_allow_html=True)
 
 # 6. NAVIGATION
 st.divider()
@@ -138,163 +139,124 @@ pages = [("🏠 HOME", "🏠"), ("🧪 LAB", "🧪"), ("💊 PHARMA", "💊"), (
 for i, (p, icon) in enumerate(pages):
     if [c1, c2, c3, c4][i].button(f"{icon} {p}", use_container_width=True):
         st.session_state.current_page = p
+        st.session_state.scan_status = "idle"
         st.rerun()
 st.divider()
 
 # =========================
-# PAGE: HOME (REGISTRATION & SCAN)
+# PAGE: HOME
 # =========================
 if st.session_state.current_page == "🏠 HOME":
-    st.subheader("📱 Patient Registration & Biometric Scan")
+    st.subheader("📱 Patient Biometric Access")
     
-    tab1, tab2 = st.tabs(["New Patient (Register)", "Existing Patient (Scan Fingerprint)"])
+    tab1, tab2 = st.tabs(["New Registration", "Fingerprint Scan"])
     
     with tab1:
         with st.form("Register"):
-            name = st.text_input("Full Name (Amazina yombi)")
-            phone = st.text_input("Phone Number")
-            if st.form_submit_button("REGISTER & SCAN FINGERPRINT"):
+            name = st.text_input("Full Name")
+            phone = st.text_input("Phone")
+            if st.form_submit_button("REGISTER & SCAN"):
+                st.session_state.scan_status = "scanning"
+                time.sleep(1)
                 fid = f"FP-{random.randint(1000, 9999)}"
                 st.session_state.db[fid] = {
                     "name": name, "phone": phone, "bp": "N/A", "temp": "N/A",
-                    "ai_tests": [], "lab_results": [], "prescription": [], "status": "Registered",
-                    "timestamp": datetime.now(kigali_tz).strftime("%Y-%m-%d %H:%M:%S")
+                    "ai_tests": [], "lab_results": [], "prescription": "", "status": "Registered"
                 }
-                st.success(f"Registered! Your Fingerprint ID: {fid}")
+                st.session_state.scan_status = "success"
+                play_sound("success")
+                st.success(f"✅ Correct! Fingerprint ID: {fid}")
                 st.session_state.current_user_id = fid
+                st.rerun()
                 
     with tab2:
-        scan_id = st.text_input("Place Finger on Scanner (Enter Fingerprint ID)")
-        if st.button("SCAN FINGERPRINT"):
+        scan_id = st.text_input("Enter ID to simulate Fingerprint Scan")
+        if st.button("SCAN NOW"):
+            st.session_state.scan_status = "scanning"
+            time.sleep(1)
             if scan_id in st.session_state.db:
+                st.session_state.scan_status = "success"
+                play_sound("success")
                 st.session_state.current_user_id = scan_id
-                st.success(f"Fingerprint Verified: {st.session_state.db[scan_id]['name']}")
+                st.success(f"✅ Correct! Verified: {st.session_state.db[scan_id]['name']}")
+                st.rerun()
             else:
+                st.session_state.scan_status = "idle"
+                play_sound("error")
                 st.error("Fingerprint not recognized!")
 
     if st.session_state.current_user_id:
         user = st.session_state.db[st.session_state.current_user_id]
-        st.info(f"Active Patient: {user['name']} | ID: {st.session_state.current_user_id}")
+        st.info(f"Patient: {user['name']} | Status: {user['status']}")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🩺 SCAN BLOOD PRESSURE"):
-                user["bp"] = f"{random.randint(110,140)}/{random.randint(70,90)} mmHg"
-                st.write(f"BP: {user['bp']}")
-        with col2:
-            if st.button("🌡️ SCAN TEMPERATURE"):
-                user["temp"] = f"{random.uniform(36.5,38.5):.1f} °C"
-                st.write(f"Temp: {user['temp']}")
+        if st.button("🩺 SCAN BP & TEMP"):
+            user["bp"] = f"{random.randint(110,140)}/{random.randint(70,90)} mmHg"
+            user["temp"] = f"{random.uniform(36.5,38.5):.1f} °C"
+            st.write(f"BP: {user['bp']} | Temp: {user['temp']}")
 
-        st.markdown("---")
         query = st.chat_input("Baza AI Muganga...")
         if query:
             if model:
                 try:
-                    sys_msg = f"Uritwa BJ Nano v8 Health AI. Patient: {user['name']}, BP: {user['bp']}, Temp: {user['temp']}. Tanga inama n'ibizamini byo gupimwa (Lab tests) n'imiti (Prescription) niba bikenewe. Subiza mu Kinyarwanda."
-                    response = model.generate_content(f"{sys_msg}\\n\\nUser: {query}")
-                    res_text = response.text
-                    st.write(res_text)
-                    
-                    if "LAB:" in res_text.upper():
-                        tests = [t.strip() for t in res_text.upper().split("LAB:")[1].split("\\n")[0].split(",")]
-                        user["ai_tests"] = tests
-                    if "MITI:" in res_text.upper() or "PRESCRIPTION:" in res_text.upper():
-                        key = "MITI:" if "MITI:" in res_text.upper() else "PRESCRIPTION:"
-                        meds = res_text.upper().split(key)[1].split("\\n")[0]
-                        user["prescription"] = meds
+                    res = model.generate_content(f"Uritwa BJ Nano v8 AI. Patient: {user['name']}, BP: {user['bp']}, Temp: {user['temp']}. Subiza mu Kinyarwanda: {query}")
+                    st.write(res.text)
+                    if "LAB:" in res.text.upper(): user["ai_tests"] = ["General Scan"]
+                    if "MITI:" in res.text.upper(): user["prescription"] = "AI Prescribed"
                 except Exception:
                     st.error("Muraho neza Muganga Ai ntarihafi jya mucyumba cyisuzumiro bagufashe")
             else:
                 st.error("Muraho neza Muganga Ai ntarihafi jya mucyumba cyisuzumiro bagufashe")
 
 # =========================
-# PAGE: LAB (TESTING)
+# PAGE: LAB
 # =========================
 elif st.session_state.current_page == "🧪 LAB":
-    st.subheader("🧪 Laboratory (Biometric Access)")
     pw = st.text_input("Lab Password", type="password")
-    if st.button("LOGIN LAB"):
+    if st.button("LOGIN"):
         if pw == st.session_state.passwords["lab"]:
             st.session_state.lab_auth = True
-        else: st.error("Wrong Password")
+            play_sound("success")
+        else:
+            play_sound("error")
+            st.error("Wrong Password")
 
     if st.session_state.get("lab_auth"):
-        st.success("Lab Access Granted")
-        target_fid = st.text_input("Scan Patient Fingerprint (ID)")
-        if target_fid in st.session_state.db:
-            p = st.session_state.db[target_fid]
-            st.write(f"**Patient:** {p['name']} | **Tests Requested by AI:** {', '.join(p['ai_tests']) if p['ai_tests'] else 'None'}")
-            
-            results = st.multiselect("Select Lab Results (Confirmed Diseases):", 
-                                    ["Malaria", "Typhoid", "Flu", "Infection", "Diabetes", "Normal"])
-            if st.button("SUBMIT RESULTS"):
-                p["lab_results"] = results
-                p["status"] = "Tested"
-                st.success("Results saved to Fingerprint ID!")
-        elif target_fid:
-            st.error("Fingerprint not found!")
+        target = st.text_input("Scan Patient ID")
+        if st.button("VERIFY FINGERPRINT"):
+            st.session_state.scan_status = "scanning"
+            time.sleep(1)
+            if target in st.session_state.db:
+                st.session_state.scan_status = "success"
+                play_sound("success")
+                p = st.session_state.db[target]
+                st.write(f"Patient: {p['name']}")
+                results = st.multiselect("Results:", ["Malaria", "Typhoid", "Normal"])
+                if st.button("SAVE"):
+                    p["lab_results"] = results
+                    st.success("✅ Saved!")
+            else:
+                play_sound("error")
+                st.error("Not Found")
 
 # =========================
-# PAGE: PHARMA (MEDICINE)
-# =========================
-elif st.session_state.current_page == "💊 PHARMA":
-    st.subheader("💊 Pharmacy (Biometric Access)")
-    pw = st.text_input("Pharmacy Password", type="password")
-    if st.button("LOGIN PHARMACY"):
-        if pw == st.session_state.passwords["phar"]:
-            st.session_state.phar_auth = True
-        else: st.error("Wrong Password")
-
-    if st.session_state.get("phar_auth"):
-        st.success("Pharmacy Access Granted")
-        target_fid = st.text_input("Scan Patient Fingerprint (ID)")
-        if target_fid in st.session_state.db:
-            p = st.session_state.db[target_fid]
-            st.write(f"**Patient:** {p['name']}")
-            st.write(f"**Lab Results:** {', '.join(p['lab_results'])}")
-            st.write(f"**AI Prescription:** {p['prescription'] if p['prescription'] else 'No prescription yet'}")
-            
-            if st.button("APPROVE & DISPENSE"):
-                p["status"] = "Treated"
-                st.balloons()
-                st.success(f"Fingerprint ID {target_fid} has been treated successfully!")
-        elif target_fid:
-            st.error("Fingerprint not found!")
-
-# =========================
-# PAGE: ADMIN (SETTINGS)
+# PAGE: ADMIN
 # =========================
 elif st.session_state.current_page == "⚙️ ADMIN":
-    st.subheader("⚙️ System Administration")
     pw = st.text_input("Admin Password", type="password")
     if st.button("LOGIN ADMIN"):
         if pw == st.session_state.passwords["admin"]:
             st.session_state.admin_auth = True
-        else: st.error("Wrong Password")
+        else:
+            play_sound("error")
+            st.error("Access Denied")
 
     if st.session_state.get("admin_auth"):
-        st.success("Admin Panel Active")
-        
-        with st.expander("Change Passwords"):
-            new_admin = st.text_input("New Admin PW")
-            new_lab = st.text_input("New Lab PW")
-            new_phar = st.text_input("New Pharma PW")
-            if st.button("UPDATE PASSWORDS"):
-                if new_admin: st.session_state.passwords["admin"] = new_admin
-                if new_lab: st.session_state.passwords["lab"] = new_lab
-                if new_phar: st.session_state.passwords["phar"] = new_phar
-                st.success("Passwords updated!")
-
-        with st.expander("System Logs & Data"):
-            df = pd.DataFrame.from_dict(st.session_state.db, orient="index")
-            st.dataframe(df)
-            csv = df.to_csv().encode('utf-8')
-            st.download_button("DOWNLOAD SYSTEM DATA (CSV)", csv, "bj_nano_v8_data.csv", "text/csv")
-
-        if st.button("FORCE SYSTEM REBOOT"):
+        st.subheader("System Control")
+        if st.button("REBOOT SYSTEM"):
             st.session_state.system_shutdown = True
             st.rerun()
+        df = pd.DataFrame.from_dict(st.session_state.db, orient="index")
+        st.dataframe(df)
+        st.download_button("Download Logs", df.to_csv(), "logs.csv")
 
-# FOOTER
 st.markdown(f"<div style='position:fixed;bottom:10px;right:20px;font-size:12px;color:#00d4ff;'>BJ Nano v8 Health Rwanda | {kigali_time} 🇷🇼</div>", unsafe_allow_html=True)
