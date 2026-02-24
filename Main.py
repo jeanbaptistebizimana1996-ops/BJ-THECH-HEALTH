@@ -3,7 +3,6 @@ from datetime import datetime
 import time
 import pandas as pd
 import random
-from openai import OpenAI
 
 # 1. INITIALIZE SYSTEM STATE
 if "db" not in st.session_state:
@@ -41,13 +40,20 @@ if "current_page" not in st.session_state:
 # SECURITY KEYS
 REBOOT_KEY = "ndaharimysystem2026"
 
-# 2. AI CONFIGURATION (GEMINI 2.5 FLASH)
-client = OpenAI()
+# 2. AI CONFIGURATION (USING GOOGLE GENERATIVE AI AS PER ORIGINAL CODE)
+try:
+    import google.generativeai as genai
+    if "GEMINI_API_KEY" in st.secrets:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        model = genai.GenerativeModel('gemini-1.5-flash')
+    else:
+        st.warning("Please set GEMINI_API_KEY in Streamlit secrets.")
+except Exception as e:
+    st.error("AI Configuration Error. Please ensure 'google-generativeai' is in requirements.txt")
 
 # 3. UI STYLE & CONFIGURATION
 st.set_page_config(page_title="BJ Nano v8 Health Rwanda", layout="wide")
 
-# CSS for App Icons, Scrolling Text, and AI Indicator
 st.markdown("""
 <style>
     header {visibility:hidden;}
@@ -58,7 +64,6 @@ st.markdown("""
         color: #e0e0e0;
     }
 
-    /* Scrolling Name */
     .scrolling-text {
         width: 100%;
         overflow: hidden;
@@ -76,7 +81,6 @@ st.markdown("""
         100% { transform: translateX(-100%); }
     }
 
-    /* Stethoscope Animation */
     @keyframes pulse {
         0% { transform: scale(1); opacity: 0.8; }
         50% { transform: scale(1.1); opacity: 1; }
@@ -90,7 +94,6 @@ st.markdown("""
         color: #00d4ff;
     }
 
-    /* AI Status Indicator */
     .ai-indicator {
         width: 15px;
         height: 15px;
@@ -106,11 +109,6 @@ st.markdown("""
         0% { opacity: 1; }
         50% { opacity: 0.3; }
         100% { opacity: 1; }
-    }
-
-    /* Prevent Sleeping Mode */
-    .no-sleep {
-        display: none;
     }
 </style>
 
@@ -142,7 +140,6 @@ if st.session_state.system_shutdown:
 # 5. HEADER WITH STETHOSCOPE & LOCAL TIME
 st.markdown("<div class='stethoscope'>🩺</div>", unsafe_allow_html=True)
 
-# Local Time Updated
 now = datetime.now().strftime("%H:%M:%S")
 st.markdown(
     f"<h3 style='text-align:center;color:#00d4ff;'>"
@@ -154,14 +151,9 @@ st.markdown(
 
 st.divider()
 
-# 6. NAVIGATION (APP SCREEN STYLE)
+# 6. NAVIGATION
 cols = st.columns(4)
-nav_items = [
-    ("🏠 HOME", "🏠"),
-    ("🧪 LAB", "🧪"),
-    ("💊 PHARMA", "💊"),
-    ("⚙️ ADMIN", "⚙️")
-]
+nav_items = [("🏠 HOME", "🏠"), ("🧪 LAB", "🧪"), ("💊 PHARMA", "💊"), ("⚙️ ADMIN", "⚙️")]
 
 for i, (label, icon) in enumerate(nav_items):
     if cols[i].button(f"{icon} {label}", use_container_width=True):
@@ -183,13 +175,8 @@ if st.session_state.current_page == "🏠 HOME":
                 uid = phone[-6:]
                 if uid not in st.session_state.db:
                     st.session_state.db[uid] = {
-                        "izina": name,
-                        "phone": phone,
-                        "results": "",
-                        "meds": "",
-                        "status": "New",
-                        "bp": "N/A",
-                        "temp": "N/A",
+                        "izina": name, "phone": phone, "results": "", "meds": "",
+                        "status": "New", "bp": "N/A", "temp": "N/A",
                     }
                 st.session_state.current_user = uid
                 st.rerun()
@@ -216,50 +203,32 @@ if st.session_state.current_page == "🏠 HOME":
         if prompt:
             with st.chat_message("assistant"):
                 try:
-                    # System prompt for European Hospital standard
                     sys_prompt = f"Uritwa BJ Nano v8 Health AI. Ukora nk'ibitaro bikomeye byo mu Burayi. Patient data: Temp {curr['temp']}, BP {curr['bp']}. Subiza mu Kinyarwanda neza kandi kinyamwuga."
-                    response = client.chat.completions.create(
-                        model="gpt-4.1-mini",
-                        messages=[
-                            {"role": "system", "content": sys_prompt},
-                            {"role": "user", "content": prompt}
-                        ]
-                    )
-                    st.write(response.choices[0].message.content)
+                    response = model.generate_content(f"{sys_prompt}\n\nUser Question: {prompt}")
+                    st.write(response.text)
                 except Exception as e:
                     st.error(f"AI Error: {str(e)}")
 
 # =========================
-# PAGE: LAB
+# PAGE: LAB, PHARMA, ADMIN (Simplified for brevity)
 # =========================
 elif st.session_state.current_page == "🧪 LAB":
     st.markdown("### 🧪 Laboratory Access")
     pw = st.text_input("Lab Password", type="password")
     if st.button("LOGIN LAB"):
-        if pw == st.session_state.passwords["lab"]:
-            st.success("Lab Access Granted - V8 Speed Active")
+        if pw == st.session_state.passwords["lab"]: st.success("Lab Access Granted")
         else:
             st.session_state.login_attempts += 1
-            if st.session_state.login_attempts >= 3:
-                st.session_state.system_shutdown = True
-                st.rerun()
+            if st.session_state.login_attempts >= 3: st.session_state.system_shutdown = True; st.rerun()
             st.error("Wrong Password")
 
-# =========================
-# PAGE: PHARMA
-# =========================
 elif st.session_state.current_page == "💊 PHARMA":
     st.markdown("### 💊 Pharmacy Management")
     pw = st.text_input("Pharmacy Password", type="password")
     if st.button("LOGIN PHARMACY"):
-        if pw == st.session_state.passwords["phar"]:
-            st.success("Pharmacy Access Granted")
-        else:
-            st.error("Wrong Password")
+        if pw == st.session_state.passwords["phar"]: st.success("Pharmacy Access Granted")
+        else: st.error("Wrong Password")
 
-# =========================
-# PAGE: ADMIN
-# =========================
 elif st.session_state.current_page == "⚙️ ADMIN":
     st.markdown("### ⚙️ System Administration")
     pw = st.text_input("Admin Password", type="password")
@@ -267,10 +236,8 @@ elif st.session_state.current_page == "⚙️ ADMIN":
         if pw == st.session_state.passwords["admin"]:
             st.success("Admin Access Granted")
             st.dataframe(pd.DataFrame.from_dict(st.session_state.db, orient="index"))
-        else:
-            st.error("Wrong Password")
+        else: st.error("Wrong Password")
 
-# FOOTER
 st.markdown(
     "<div style='position:fixed;bottom:10px;right:20px;font-size:12px;color:#00d4ff;font-weight:bold;'>"
     "BJ Nano v8 Health Rwanda | Professional European Standard 🇪🇺"
