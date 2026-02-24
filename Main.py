@@ -22,6 +22,7 @@ HACK_KEYWORDS = ["DROP", "DELETE", "SELECT *", "<script>", "OR 1=1", "UNION ALL"
 
 # 2. HIGH-SPEED AI CONFIGURATION
 try:
+    # Use the user's key or a default if available
     api_key = st.secrets.get("GEMINI_API_KEY", "AIzaSyDUxyCei7WEpFar85ShrHV5I6f7Lmzo0Oo")
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-1.5-flash')
@@ -45,76 +46,165 @@ if time.time() - st.session_state.last_activity > timeout:
     st.session_state.messages = []
     st.session_state.last_activity = time.time()
 
-# 5. UI STYLE (TRANSPARENT & CLEAN)
-st.set_page_config(page_title="BJ TECH Medical OS", layout="wide")
+# 5. UI STYLE (MEDICAL NANO-TECH THEME)
+st.set_page_config(page_title="BJ TECH Medical Nano-OS", layout="wide")
+
+# Custom CSS for Medical/Nano-Tech Look
 st.markdown("""
 <style>
     header {visibility: hidden;} footer {visibility: hidden;}
+    
+    /* Background with Fingerprint and Medical Colors */
     .stApp {
-        background-image: url("https://img.icons8.com/ios-filled/500/1a5fb4/fingerprint.png");
-        background-repeat: no-repeat; background-position: center; background-size: 200px;
-        background-color: #f4f7f6; background-blend-mode: overlay;
+        background: radial-gradient(circle at center, #f0f9ff 0%, #e0f2fe 100%);
+        background-image: url("https://img.icons8.com/ios-filled/500/0077b6/fingerprint.png");
+        background-repeat: no-repeat; 
+        background-position: center; 
+        background-size: 400px;
+        background-attachment: fixed;
+        background-blend-mode: soft-light;
     }
-    /* Transparent Forms */
-    [data-testid="stForm"], .stTabs, .stTab, [data-testid="stExpander"] {
-        background-color: transparent !important; border: none !important; box-shadow: none !important;
+    
+    /* Glassmorphism for Containers (Nano-Tech Feel) */
+    [data-testid="stForm"], .stTabs, .stTab, [data-testid="stExpander"], .stChatMessage {
+        background: rgba(255, 255, 255, 0.7) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 15px !important;
+        border: 1px solid rgba(0, 119, 182, 0.2) !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important;
+        padding: 20px !important;
     }
-    /* Mobile Keyboard Optimization */
-    .stTextInput input { font-size: 16px !important; }
-    .icon-only { font-size: 70px; text-align: center; color: #1a5fb4; margin-bottom: 5px; }
-    .emergency-btn { background-color: #ff0000 !important; color: white !important; font-weight: bold; }
-    .hacker-alert { background-color: black; color: red; padding: 40px; text-align: center; border: 5px solid red; animation: blinker 1s linear infinite; }
-    @keyframes blinker { 50% { opacity: 0; } }
+    
+    /* Medical Blue Accents */
+    .stButton>button {
+        background-color: #0077b6 !important;
+        color: white !important;
+        border-radius: 10px !important;
+        border: none !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #0096c7 !important;
+        transform: scale(1.02);
+    }
+    
+    /* Emergency Button */
+    .emergency-btn {
+        background-color: #d00000 !important;
+        color: white !important;
+        font-weight: bold !important;
+        border: 2px solid white !important;
+    }
+    
+    /* Nano-Tech Input Styling */
+    .stTextInput input {
+        border-radius: 10px !important;
+        border: 1px solid #0077b6 !important;
+        font-size: 16px !important;
+    }
+    
+    /* Fingerprint Icon for Headers */
+    .fingerprint-header {
+        font-size: 80px;
+        text-align: center;
+        color: #0077b6;
+        margin-top: -20px;
+        filter: drop-shadow(0 0 10px rgba(0, 119, 182, 0.5));
+    }
+    
+    .hacker-alert { 
+        background-color: #1a1a1a; 
+        color: #ff4b4b; 
+        padding: 50px; 
+        text-align: center; 
+        border: 10px solid #ff4b4b; 
+        border-radius: 20px;
+        animation: blinker 0.8s linear infinite; 
+        font-family: 'Courier New', Courier, monospace;
+    }
+    @keyframes blinker { 50% { opacity: 0.3; } }
 </style>
 """, unsafe_allow_html=True)
 
 # 6. CYBER-SECURITY LOCKDOWN
 if st.session_state.system_locked:
-    st.markdown('<div class="hacker-alert">🚨 SECURITY BREACH! SYSTEM LOCKED</div>', unsafe_allow_html=True)
-    unlock = st.text_input("Admin Unlock Key:", type="password")
-    if unlock == MASTER_RECOVERY_KEY:
-        st.session_state.system_locked = False
-        st.rerun()
+    st.markdown('<div class="hacker-alert">🚨 SECURITY BREACH! SYSTEM LOCKED<br>Please Contact Admin</div>', unsafe_allow_html=True)
+    unlock = st.text_input("Fungura Sisitemu (Admin Key):", type="password")
+    if st.button("EMEZA"):
+        if unlock == MASTER_RECOVERY_KEY:
+            st.session_state.system_locked = False
+            st.rerun()
+        else:
+            st.error("Urufunguzo si rwo!")
     st.stop()
 
-# 7. SIDEBAR
+# 7. SIDEBAR (NANO-TECH STYLE)
 with st.sidebar:
-    st.markdown(f"### 🕒 {datetime.now().strftime('%H:%M:%S')}")
-    role = st.radio("GATEWAY:", ["🏠 Kiosk (Patient)", "🧪 Laboratory", "⚙️ Admin"])
+    st.markdown(f"<h2 style='color:#0077b6; text-align:center;'>🏥 BJ TECH</h2>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center;'>🕒 {datetime.now().strftime('%H:%M:%S')}</p>", unsafe_allow_html=True)
+    st.divider()
+    role = st.radio("HITAMO AHO WINJIRA:", ["🏠 Patient Kiosk", "🧪 Laboratory", "⚙️ Admin Dashboard"])
+    st.divider()
+    st.info("BJ TECH Nano-Shield v2.0 is Active.")
 
 # --- PAGE: KIOSK (PATIENT) ---
-if role == "🏠 Kiosk (Patient)":
-    st.markdown("<div class='icon-only'>🛡️</div>", unsafe_allow_html=True)
+if role == "🏠 Patient Kiosk":
+    st.markdown("<div class='fingerprint-header'>☝️</div>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center; color:#0077b6;'>Patient Access</h1>", unsafe_allow_html=True)
     
     if not st.session_state.current_user:
         with st.form("Login"):
-            p_phone = st.text_input("Andika Nimero ya Foni (Registration):", placeholder="078...")
-            p_name = st.text_input("Amazina yombi (First time):")
-            if st.form_submit_button("INJIRA / REGISTER"):
-                if check_for_hacking(p_phone) or check_for_hacking(p_name):
+            st.subheader("Kwiyandikisha / Kwinjira")
+            p_phone = st.text_input("Nimero ya Foni:", placeholder="078...")
+            p_name = st.text_input("Amazina yombi:")
+            
+            # Confirmation Button
+            submit = st.form_submit_button("EMEZA KWINJIRA")
+            
+            if submit:
+                if not p_phone or not p_name:
+                    st.warning("Uzuza neza imyirondoro yawe!")
+                elif check_for_hacking(p_phone) or check_for_hacking(p_name):
                     st.session_state.system_locked = True
                     st.rerun()
-                new_id = p_phone[-6:] if p_phone else "000000"
-                if new_id not in st.session_state.db:
-                    st.session_state.db[new_id] = {"izina": p_name, "phone": p_phone, "results": "", "meds": ""}
-                st.session_state.current_user = new_id
-                update_activity()
-                st.rerun()
+                else:
+                    new_id = p_phone[-6:] if p_phone else "000000"
+                    if new_id not in st.session_state.db:
+                        st.session_state.db[new_id] = {"izina": p_name, "phone": p_phone, "results": "", "meds": ""}
+                    st.session_state.current_user = new_id
+                    update_activity()
+                    st.success("Winjijwe neza!")
+                    time.sleep(1)
+                    st.rerun()
     else:
         curr = st.session_state.db[st.session_state.current_user]
-        st.success(f"Verified: {curr['izina']}")
+        st.markdown(f"<h3 style='color:#0077b6;'>Muraho, {curr['izina']}!</h3>", unsafe_allow_html=True)
         
+        # Logout button
+        if st.button("SOHOKA (LOGOUT)"):
+            st.session_state.current_user = None
+            st.session_state.messages = []
+            st.rerun()
+
         # EMERGENCY BUTTONS
+        st.write("---")
+        st.subheader("Ukeneye ubufasha bwihuse?")
         col1, col2, col3 = st.columns(3)
-        if col1.button("🩸 AMARASO"): curr["emergency"] = "BLEEDING"; update_activity()
-        if col2.button("🤰 INDA"): curr["emergency"] = "PREGNANCY"; update_activity()
-        if col3.button("🤢 IZINDI"): curr["emergency"] = "CRITICAL"; update_activity()
+        if col1.button("🩸 AMARASO (Bleeding)", use_container_width=True): 
+            curr["emergency"] = "BLEEDING"; update_activity(); st.error("Ubufasha buraje!")
+        if col2.button("🤰 INDA (Pregnancy)", use_container_width=True): 
+            curr["emergency"] = "PREGNANCY"; update_activity(); st.error("Ubufasha buraje!")
+        if col3.button("🤢 IZINDI (Other)", use_container_width=True): 
+            curr["emergency"] = "CRITICAL"; update_activity(); st.error("Ubufasha buraje!")
 
         # HIGH-SPEED AI CHAT
+        st.write("---")
+        st.subheader("Baza AI Muganga (Medical Assistant)")
         for m in st.session_state.messages:
             with st.chat_message(m["role"]): st.write(m["content"])
         
-        if prompt := st.chat_input("Baza AI...", on_submit=update_activity):
+        if prompt := st.chat_input("Andika hano...", on_submit=update_activity):
             if check_for_hacking(prompt):
                 st.session_state.system_locked = True
                 st.rerun()
@@ -123,27 +213,45 @@ if role == "🏠 Kiosk (Patient)":
             with st.chat_message("assistant"):
                 res_placeholder = st.empty()
                 full_res = ""
-                response_stream = model.generate_content(f"Advice {curr['izina']} in Kinyarwanda: {prompt}", stream=True)
-                for chunk in response_stream:
-                    full_res += chunk.text
-                    res_placeholder.markdown(full_res + "▌")
-                res_placeholder.markdown(full_res)
+                try:
+                    response_stream = model.generate_content(f"Advice {curr['izina']} in Kinyarwanda about this medical concern: {prompt}", stream=True)
+                    for chunk in response_stream:
+                        full_res += chunk.text
+                        res_placeholder.markdown(full_res + "▌")
+                    res_placeholder.markdown(full_res)
+                except:
+                    full_res = "AI ntabwo iri kuboneka ubu. Gerageza nyuma."
+                    res_placeholder.markdown(full_res)
                 st.session_state.messages.append({"role": "assistant", "content": full_res})
 
 # --- PAGE: LABORATORY (MULTIPLE CHOICE) ---
 elif role == "🧪 Laboratory":
-    st.markdown("<div class='icon-only'>🧪</div>", unsafe_allow_html=True)
+    st.markdown("<div class='fingerprint-header'>🧪</div>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center; color:#0077b6;'>Laboratory Portal</h1>", unsafe_allow_html=True)
+    
     lab_id = st.selectbox("Hitamo Umurwayi:", list(st.session_state.db.keys()))
     if lab_id:
         p = st.session_state.db[lab_id]
-        st.write(f"Umurwayi: {p['izina']}")
-        tests = st.multiselect("Indwara basanze (Multiple):", ["Malaria", "Typhoid", "Amoeba", "Infection", "Flu"])
-        if st.button("BOHEREZA SMS (AI)"):
-            all_t = ", ".join(tests)
-            p["results"] = all_t
-            ai_sms = model.generate_content(f"Andika SMS ya Kinyarwanda kuri {p['izina']} urwaye {all_t}. Mubwire imiti n'inama.").text
-            p["meds"] = ai_sms
-            st.success("SMS na Lab Results byoherejwe!")
-            st.info(f"AI SMS: {ai_sms}")
+        st.info(f"Umurwayi: **{p['izina']}** | Phone: {p['phone']}")
+        
+        with st.container():
+            tests = st.multiselect("Indwara basanze (Hitamo izo ubonye):", ["Malaria", "Typhoid", "Amoeba", "Infection", "Flu", "UTI", "Diabetes"])
+            
+            # Confirm Button for Lab
+            if st.button("EMEZA NO KOHEREZA SMS (AI)"):
+                if not tests:
+                    st.warning("Hitamo nibura indwara imwe!")
+                else:
+                    all_t = ", ".join(tests)
+                    p["results"] = all_t
+                    with st.spinner("AI iri gutegura ubutumwa..."):
+                        try:
+                            ai_sms = model.generate_content(f"Andika SMS ya Kinyarwanda kuri {p['izina']} urwaye {all_t}. Mubwire imiti n'inama mu ncamake.").text
+                            p["meds"] = ai_sms
+                            st.success("Ibipimo na SMS byoherejwe!")
+                            st.markdown(f"**AI SMS yoherejwe:** {ai_sms}")
+                        except:
+                            st.error("AI ntabwo ibashije kwandika SMS ubu.")
 
-st.markdown("<div style='position:fixed; bottom:10px; left:20px; font-size:10px; color:#1a5fb4;'>BJ TECH CYBER-SHIELD ACTIVE</div>", unsafe_allow_html=True)
+# --- FOOTER ---
+st.markdown("<div style='position:fixed; bottom:10px; right:20px; font-size:12px; color:#0077b6; font-weight:bold;'>BJ TECH MEDICAL NANO-OS v2.0 | SECURE 🛡️</div>", unsafe_allow_html=True)
