@@ -23,8 +23,6 @@ if "current_user" not in st.session_state:
     st.session_state.current_user = None
 if "system_locked" not in st.session_state:
     st.session_state.system_locked = False
-if "current_page" not in st.session_state:
-    st.session_state.current_page = "🏠 Home"
 
 # 2. AI CONFIGURATION
 try:
@@ -34,26 +32,8 @@ try:
 except:
     st.error("AI Configuration Error.")
 
-# 3. UI STYLE (MEDICAL NANO-TECH v4.1)
-st.set_page_config(page_title="BJ TECH Medical Nano-OS v4.1", layout="wide")
-
-# JavaScript for Real-Time Clock Update (No Page Refresh Needed)
-st.markdown("""
-<script>
-    function updateClock() {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const timeString = hours + ":" + minutes + ":" + seconds;
-        const clockElement = window.parent.document.querySelector('.large-clock');
-        if (clockElement) {
-            clockElement.innerText = timeString;
-        }
-    }
-    setInterval(updateClock, 1000);
-</script>
-""", unsafe_allow_html=True)
+# 3. UI STYLE (MEDICAL NANO-TECH v4.0)
+st.set_page_config(page_title="BJ TECH Medical Nano-OS v4.0", layout="wide")
 
 st.markdown(f"""
 <style>
@@ -69,6 +49,7 @@ st.markdown(f"""
         background-blend-mode: soft-light;
     }}
     
+    /* Sidebar Styling */
     [data-testid="stSidebar"] {{
         background-color: rgba(255, 255, 255, 0.8) !important;
         backdrop-filter: blur(15px);
@@ -102,13 +83,11 @@ st.markdown(f"""
     }}
     
     .large-clock {{
-        font-size: 80px;
+        font-size: 50px;
         font-weight: bold;
         color: #0077b6;
         text-align: center;
         font-family: 'Courier New', monospace;
-        text-shadow: 0 0 15px rgba(0, 119, 182, 0.3);
-        margin-bottom: 10px;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -120,7 +99,7 @@ with st.sidebar:
     st.divider()
     page = st.radio("MENU:", ["🏠 Home", "🧪 Laboratory", "💊 Pharmacy", "⚙️ Admin"])
     st.divider()
-    st.markdown(f"<div style='text-align:center; color:#0077b6;'>SYSTEM ACTIVE</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='large-clock'>{datetime.now().strftime('%H:%M')}</div>", unsafe_allow_html=True)
     st.info("Secure Nano-Shield Active")
 
 # 5. CYBER-SECURITY LOCKDOWN
@@ -132,9 +111,6 @@ if st.session_state.system_locked:
             st.session_state.system_locked = False
             st.rerun()
     st.stop()
-
-# 6. REAL-TIME CLOCK DISPLAY
-st.markdown(f"<div class='large-clock'>{datetime.now().strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
 
 # --- PAGE: HOME ---
 if page == "🏠 Home":
@@ -205,6 +181,7 @@ elif page == "🧪 Laboratory":
                 ai_prescription = model.generate_content(f"Patient {p['izina']} has {all_t}. Prescribe meds in Kinyarwanda briefly.").text
                 p["meds"] = ai_prescription
                 st.success("Results & AI Prescription Sent!")
+                st.info(f"SMS Sent to {p['phone']}")
 
 # --- PAGE: PHARMACY ---
 elif page == "💊 Pharmacy":
@@ -273,4 +250,4 @@ elif page == "⚙️ Admin":
         st.download_button("📥 DOWNLOAD CSV REPORT", data=csv, file_name="BJ_TECH_REPORT.csv", mime="text/csv")
 
 # --- FOOTER ---
-st.markdown("<div style='position:fixed; bottom:10px; right:20px; font-size:12px; color:#0077b6; font-weight:bold;'>BJ TECH MEDICAL NANO-OS v4.1 | REAL-TIME CLOCK 🛡️</div>", unsafe_allow_html=True)
+st.markdown("<div style='position:fixed; bottom:10px; right:20px; font-size:12px; color:#0077b6; font-weight:bold;'>BJ TECH MEDICAL NANO-OS v4.0 | PROFESSIONAL EDITION 🛡️</div>", unsafe_allow_html=True)
