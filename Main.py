@@ -1,5 +1,4 @@
 import streamlit as st
-import google.generativeai as genai
 from datetime import datetime
 import time
 import pandas as pd
@@ -41,12 +40,15 @@ if "current_page" not in st.session_state:
 # SECURITY KEYS
 REBOOT_KEY = "ndaharimysystem2026"
 
-# 2. AI CONFIGURATION
+# 2. AI CONFIGURATION (UPDATED GEMINI VERSION)
 try:
-    api_key = st.secrets.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
-except:
+    from google import genai
+
+    client = genai.Client(
+        api_key=st.secrets["GEMINI_API_KEY"]
+    )
+
+except Exception as e:
     st.error("AI Configuration Error.")
 
 # 3. UI STYLE
@@ -199,9 +201,10 @@ if st.session_state.current_page == "🏠 Home":
         prompt = st.chat_input("Baza AI Muganga...")
         if prompt:
             with st.chat_message("assistant"):
-                response = model.generate_content(
-                    f"You are medical AI. Patient temp {curr['temp']} BP {curr['bp']}. "
-                    f"Answer in Kinyarwanda: {prompt}"
+                response = client.models.generate_content(
+                    model="gemini-1.5-flash",
+                    contents=f"You are medical AI. Patient temp {curr['temp']} BP {curr['bp']}. "
+                             f"Answer in Kinyarwanda: {prompt}"
                 ).text
                 st.write(response)
 
