@@ -96,7 +96,7 @@ st.markdown("""
 
 # 4. CYBER-SECURITY AUTO-SHUTDOWN LOGIC
 if st.session_state.system_shutdown:
-    st.markdown(\"\"\"
+    st.markdown("\"\"
     <div class="shutdown-screen">
         <h1>🚨 SYSTEM AUTO SHUTDOWN 🚨</h1>
         <h2 style="color: black; background: white; padding: 10px;">SOMEONE TRYING TO HACK</h2>
