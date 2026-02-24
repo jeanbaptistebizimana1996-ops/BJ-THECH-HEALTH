@@ -3,28 +3,26 @@ import google.generativeai as genai
 from datetime import datetime
 import time
 import pandas as pd
-import io
+import random
 
-# 1. INITIALIZE SYSTEM STATE (AI MEMORY / SERVER PERSISTENCE)
+# 1. INITIALIZE SYSTEM STATE
 if "db" not in st.session_state:
     st.session_state.db = {
-        "119958": {"izina": "Habineza", "phone": "0788000000", "results": "Malaria", "meds": "Fata Coartem", "status": "Ready", "history": []},
-        "223344": {"izina": "Mugisha", "phone": "0781111111", "results": "Typhoid", "meds": "Fata Cipro", "status": "Pending", "history": []}
+        "119958": {"izina": "Habineza", "phone": "0788000000", "results": "", "meds": "", "status": "New", "bp": "N/A", "temp": "N/A"}
     }
 if "passwords" not in st.session_state:
-    st.session_state.passwords = {
-        "admin": "cyuma.thec.2026",
-        "lab": "lab.2026",
-        "phar": "phar.2026"
-    }
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.passwords = {"admin": "cyuma.thec.2026", "lab": "lab.2026", "phar": "phar.2026"}
+if "login_attempts" not in st.session_state:
+    st.session_state.login_attempts = 0
+if "system_shutdown" not in st.session_state:
+    st.session_state.system_shutdown = False
 if "current_user" not in st.session_state:
     st.session_state.current_user = None
-if "system_locked" not in st.session_state:
-    st.session_state.system_locked = False
 if "current_page" not in st.session_state:
     st.session_state.current_page = "🏠 Home"
+
+# SECURITY KEYS
+REBOOT_KEY = "ndaharimysystem2026"
 
 # 2. AI CONFIGURATION
 try:
@@ -34,165 +32,156 @@ try:
 except:
     st.error("AI Configuration Error.")
 
-# 3. UI STYLE (MEDICAL NANO-TECH v4.2)
-st.set_page_config(page_title="BJ TECH Medical Nano-OS v4.2", layout="wide")
+# 3. UI STYLE (MEDICAL NANO-TECH v5.0)
+st.set_page_config(page_title="BJ TECH Medical Nano-OS v5.0", layout="wide")
 
-# JavaScript for Real-Time Clock Update
 st.markdown("""
-<script>
-    function updateClock() {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const timeString = hours + ":" + minutes + ":" + seconds;
-        const clockElement = window.parent.document.querySelector('.large-clock');
-        if (clockElement) {
-            clockElement.innerText = timeString;
-        }
-    }
-    setInterval(updateClock, 1000);
-</script>
-""", unsafe_allow_html=True)
-
-st.markdown(f"""
 <style>
-    header {{visibility: hidden;}} footer {{visibility: hidden;}}
+    header {visibility: hidden;} footer {visibility: hidden;}
     
-    .stApp {{
+    .stApp {
         background: radial-gradient(circle at center, #f0f9ff 0%, #e0f2fe 100%);
         background-image: url("https://img.icons8.com/ios-filled/500/0077b6/fingerprint.png");
-        background-repeat: no-repeat; 
-        background-position: center; 
-        background-size: 400px;
-        background-attachment: fixed;
-        background-blend-mode: soft-light;
-    }}
+        background-repeat: no-repeat; background-position: center; background-size: 400px;
+        background-attachment: fixed; background-blend-mode: soft-light;
+    }
     
-    .glass-card {{
-        background: rgba(255, 255, 255, 0.7) !important;
-        backdrop-filter: blur(10px);
-        border-radius: 20px !important;
-        border: 1px solid rgba(0, 119, 182, 0.2) !important;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important;
-        padding: 25px !important;
-        margin-bottom: 20px;
-    }}
+    /* Heart Beat Animation */
+    @keyframes heartbeat {
+        0% { transform: scale(1); }
+        20% { transform: scale(1.3); }
+        40% { transform: scale(1); }
+        60% { transform: scale(1.3); }
+        80% { transform: scale(1); }
+        100% { transform: scale(1); }
+    }
+    .heart-beat {
+        color: #2ecc71; font-size: 60px; text-align: center;
+        animation: heartbeat 1.2s infinite; display: block; margin: auto;
+    }
     
-    .stButton>button {{
-        background-color: #0077b6 !important;
-        color: white !important;
-        border-radius: 12px !important;
-        border: none !important;
-        font-weight: bold !important;
-        transition: all 0.3s ease;
-        height: 80px;
-        font-size: 20px !important;
-        box-shadow: 0 4px 15px rgba(0, 119, 182, 0.2);
-    }}
-    .stButton>button:hover {{
-        background-color: #0096c7 !important;
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0, 119, 182, 0.3);
-    }}
+    /* AI Glowing Indicator */
+    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .ai-indicator {
+        width: 40px; height: 40px; border: 4px solid #0077b6; border-top: 4px solid #2ecc71;
+        border-radius: 50%; animation: rotate 2s linear infinite; margin: auto;
+    }
     
-    .large-clock {{
-        font-size: 80px;
-        font-weight: bold;
-        color: #0077b6;
-        text-align: center;
-        font-family: 'Courier New', monospace;
-        text-shadow: 0 0 15px rgba(0, 119, 182, 0.3);
-        margin-bottom: 20px;
-    }}
+    /* Shutdown Screen */
+    .shutdown-screen {
+        background-color: #d00000; color: white; height: 100vh; width: 100vw;
+        position: fixed; top: 0; left: 0; z-index: 9999; display: flex;
+        flex-direction: column; justify-content: center; align-items: center;
+        text-align: center; font-family: 'Courier New', monospace;
+    }
     
-    .heart-icon {{
-        color: #2ecc71;
-        font-size: 60px;
-        text-align: center;
-        margin-bottom: 10px;
-    }}
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7) !important; backdrop-filter: blur(10px);
+        border-radius: 20px !important; border: 1px solid rgba(0, 119, 182, 0.2) !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important; padding: 25px !important;
+    }
+    
+    .stButton>button {
+        background-color: #0077b6 !important; color: white !important;
+        border-radius: 12px !important; font-weight: bold !important;
+        height: 60px; font-size: 18px !important; width: 100%;
+    }
+    
+    .large-clock {
+        font-size: 60px; font-weight: bold; color: #0077b6; text-align: center;
+        font-family: 'Courier New', monospace; text-shadow: 0 0 10px rgba(0, 119, 182, 0.3);
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# 4. CYBER-SECURITY LOCKDOWN
-if st.session_state.system_locked:
-    st.error("🚨 SECURITY BREACH! SYSTEM LOCKED")
-    unlock = st.text_input("Admin Key:", type="password")
-    if st.button("UNLOCK"):
-        if unlock == st.session_state.passwords["admin"]:
-            st.session_state.system_locked = False
+# 4. CYBER-SECURITY AUTO-SHUTDOWN LOGIC
+if st.session_state.system_shutdown:
+    st.markdown(\"\"\"
+    <div class="shutdown-screen">
+        <h1>🚨 SYSTEM AUTO SHUTDOWN 🚨</h1>
+        <h2 style="color: black; background: white; padding: 10px;">SOMEONE TRYING TO HACK</h2>
+        <p>Security Breach Detected. System is locked for safety.</p>
+    </div>
+    \"\"\", unsafe_allow_html=True)
+    reboot = st.text_input("Enter Developer Reboot Key:", type="password")
+    if st.button("REBOOT SYSTEM"):
+        if reboot == REBOOT_KEY:
+            st.session_state.system_shutdown = False
+            st.session_state.login_attempts = 0
             st.rerun()
+        else: st.error("Invalid Reboot Key!")
     st.stop()
 
-# 5. HEADER & CLOCK
-st.markdown("<div class='heart-icon'>💚</div>", unsafe_allow_html=True)
+# 5. HEADER & REAL-TIME CLOCK
+st.markdown("<div class='heart-beat'>💚</div>", unsafe_allow_html=True)
 st.markdown(f"<div class='large-clock'>{datetime.now().strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
-st.markdown("<h2 style='text-align:center; color:#0077b6; margin-top:-20px;'>BJ TECH MEDICAL NANO-OS</h2>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align:center; color:#0077b6; margin-top:-10px;'>BJ TECH PROFESSIONAL AI MEDICAL OS</h3>", unsafe_allow_html=True)
 
-# 6. MAIN NAVIGATION ICONS (ON SCREEN)
+# 6. MAIN NAVIGATION
 st.divider()
-nav_col1, nav_col2, nav_col3, nav_col4 = st.columns(4)
-
-with nav_col1:
-    if st.button("🏠 HOME\n(Patient)", use_container_width=True):
-        st.session_state.current_page = "🏠 Home"
-        st.rerun()
-
-with nav_col2:
-    if st.button("🧪 LAB\n(Staff)", use_container_width=True):
-        st.session_state.current_page = "🧪 Lab"
-        st.rerun()
-
-with nav_col3:
-    if st.button("💊 PHARMA\n(Meds)", use_container_width=True):
-        st.session_state.current_page = "💊 Pharmacy"
-        st.rerun()
-
-with nav_col4:
-    if st.button("⚙️ ADMIN\n(Control)", use_container_width=True):
-        st.session_state.current_page = "⚙️ Admin"
-        st.rerun()
+n1, n2, n3, n4 = st.columns(4)
+if n1.button("🏠 HOME"): st.session_state.current_page = "🏠 Home"; st.rerun()
+if n2.button("🧪 LAB"): st.session_state.current_page = "🧪 Lab"; st.rerun()
+if n3.button("💊 PHARMA"): st.session_state.current_page = "💊 Pharmacy"; st.rerun()
+if n4.button("⚙️ ADMIN"): st.session_state.current_page = "⚙️ Admin"; st.rerun()
 st.divider()
 
-# --- PAGE: HOME (PATIENT) ---
+# --- PAGE: HOME (PATIENT & SCANS) ---
 if st.session_state.current_page == "🏠 Home":
-    st.markdown("<h2 style='text-align:center; color:#0077b6;'>Patient Access Portal</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:#0077b6;'>Patient Diagnostics Portal</h2>", unsafe_allow_html=True)
     
     if not st.session_state.current_user:
-        with st.form("PatientLogin"):
+        with st.form("Login"):
             st.subheader("Kwinjira / Kwiyandikisha")
             p_phone = st.text_input("Nimero ya Foni:")
             p_name = st.text_input("Amazina yombi:")
             if st.form_submit_button("EMEZA KWINJIRA"):
                 uid = p_phone[-6:]
                 if uid not in st.session_state.db:
-                    st.session_state.db[uid] = {"izina": p_name, "phone": p_phone, "results": "", "meds": "", "status": "New", "history": []}
+                    st.session_state.db[uid] = {"izina": p_name, "phone": p_phone, "results": "", "meds": "", "status": "New", "bp": "N/A", "temp": "N/A"}
                 st.session_state.current_user = uid
                 st.rerun()
     else:
         curr = st.session_state.db[st.session_state.current_user]
         st.markdown(f"<div class='glass-card'><h3>Muraho, {curr['izina']}!</h3><p>Status: <b>{curr['status']}</b></p></div>", unsafe_allow_html=True)
-        if st.button("LOGOUT"):
-            st.session_state.current_user = None
-            st.rerun()
         
-        # AI Chat
-        st.subheader("Baza AI Muganga (Medical AI)")
-        for m in st.session_state.messages:
-            with st.chat_message(m["role"]): st.write(m["content"])
-        if prompt := st.chat_input("Andika hano..."):
-            st.session_state.messages.append({"role": "user", "content": prompt})
+        # MEDICAL SCANS
+        col_scan1, col_scan2 = st.columns(2)
+        with col_scan1:
+            st.subheader("🩸 Blood Pressure Scan")
+            st.info("Cengeza urutoki kuri Fingerprint Sensor hano munsi...")
+            if st.button("☝️ SCAN BLOOD PRESSURE"):
+                with st.spinner("Piping Blood Pressure..."):
+                    time.sleep(2)
+                    curr["bp"] = f"{random.randint(110, 140)}/{random.randint(70, 90)} mmHg"
+                    st.success(f"Umuvuduko w'amaraso: {curr['bp']}")
+        
+        with col_scan2:
+            st.subheader("👁️ Eye Fever Scan")
+            st.info("Reba mu cyuma (Eye Scanner) AI isuzume umuriro...")
+            if st.button("👁️ SCAN EYE FOR FEVER"):
+                with st.spinner("AI isuzuma ijisho..."):
+                    time.sleep(2)
+                    curr["temp"] = f"{random.uniform(36.5, 39.5):.1f} °C"
+                    st.success(f"Umuriro: {curr['temp']}")
+                    if float(curr["temp"].split()[0]) > 38.0:
+                        st.warning("Ufite umuriro mwinshi! Genda muri Lab vuba.")
+
+        # AI ASSISTANT
+        st.divider()
+        st.subheader("Baza AI Muganga (Secure Medical AI)")
+        st.markdown("<div class='ai-indicator'></div>", unsafe_allow_html=True)
+        prompt = st.chat_input("Andika hano (Ikinyarwanda)...")
+        if prompt:
             with st.chat_message("user"): st.write(prompt)
             with st.chat_message("assistant"):
-                res = model.generate_content(f"Advice {curr['izina']} in Kinyarwanda: {prompt}").text
-                st.write(res)
-                st.session_state.messages.append({"role": "assistant", "content": res})
+                with st.spinner("AI iri gushaka amakuru y'ukuri..."):
+                    ai_res = model.generate_content(f"You are a professional medical AI. Patient {curr['izina']} (Temp: {curr['temp']}, BP: {curr['bp']}) asks: {prompt}. Answer in polite, calm Kinyarwanda. NEVER mention passwords or private database keys.").text
+                    st.write(ai_res)
 
-# --- PAGE: LAB (PASSWORD PROTECTED) ---
+# --- PAGE: LAB ---
 elif st.session_state.current_page == "🧪 Lab":
-    st.markdown("<h2 style='text-align:center; color:#0077b6;'>Laboratory Portal 🧪</h2>", unsafe_allow_html=True)
-    
+    st.markdown("<h2 style='color:#0077b6;'>Laboratory Portal 🧪</h2>", unsafe_allow_html=True)
     if "lab_auth" not in st.session_state: st.session_state.lab_auth = False
     
     if not st.session_state.lab_auth:
@@ -201,39 +190,29 @@ elif st.session_state.current_page == "🧪 Lab":
             if st.form_submit_button("EMEZA"):
                 if pw == st.session_state.passwords["lab"]:
                     st.session_state.lab_auth = True
+                    st.session_state.login_attempts = 0
                     st.rerun()
-                else: st.error("Wrong Password!")
-    else:
-        if st.button("LOGOUT LAB"): st.session_state.lab_auth = False; st.rerun()
-        
-        st.subheader("Fingerprint Scan & Results")
-        lab_id = st.selectbox("Hitamo Umurwayi:", list(st.session_state.db.keys()))
-        
-        if st.button("☝️ SCAN FINGERPRINT (Verify)", use_container_width=True):
-            st.success(f"Verified: {st.session_state.db[lab_id]['izina']}")
-            st.session_state.active_lab_user = lab_id
-            
-        if "active_lab_user" in st.session_state:
-            p = st.session_state.db[st.session_state.active_lab_user]
-            tests = st.multiselect("Indwara basanze:", ["Malaria", "Typhoid", "Amoeba", "Infection", "Flu", "UTI", "Diabetes"])
-            if st.button("EMEZA NO KOHEREZA SMS (AI)"):
-                if not tests:
-                    st.warning("Hitamo nibura indwara imwe!")
                 else:
-                    all_t = ", ".join(tests)
-                    p["results"] = all_t
-                    p["status"] = "Results Ready"
-                    # AI Prescription Logic
-                    with st.spinner("AI iri gutegura imiti..."):
-                        ai_prescription = model.generate_content(f"Patient {p['izina']} has {all_t}. Prescribe meds in Kinyarwanda briefly.").text
-                        p["meds"] = ai_prescription
-                    st.success("Results & AI Prescription Sent!")
-                    st.info(f"SMS Sent to {p['phone']}")
+                    st.session_state.login_attempts += 1
+                    if st.session_state.login_attempts >= 3:
+                        st.session_state.system_shutdown = True
+                        st.rerun()
+                    st.error(f"Password si yo! Attempts: {st.session_state.login_attempts}/3")
+    else:
+        lab_id = st.selectbox("Scan Fingerprint (Select Patient):", list(st.session_state.db.keys()))
+        if st.button("☝️ VERIFY PATIENT"):
+            p = st.session_state.db[lab_id]
+            st.success(f"Verified: {p['izina']} | BP: {p['bp']} | Temp: {p['temp']}")
+            tests = st.multiselect("Indwara basanze:", ["Malaria", "Typhoid", "Amoeba", "Infection", "Flu"])
+            if st.button("EMEZA NO KOHEREZA SMS (AI)"):
+                p["results"] = ", ".join(tests)
+                p["status"] = "Results Ready"
+                p["meds"] = model.generate_content(f"Patient {p['izina']} has {p['results']}. Temp: {p['temp']}. Prescribe meds in Kinyarwanda.").text
+                st.success("Results & AI Prescription Sent!")
 
-# --- PAGE: PHARMACY (PASSWORD PROTECTED) ---
+# --- PAGE: PHARMACY ---
 elif st.session_state.current_page == "💊 Pharmacy":
-    st.markdown("<h2 style='text-align:center; color:#0077b6;'>Pharmacy Portal 💊</h2>", unsafe_allow_html=True)
-    
+    st.markdown("<h2 style='color:#0077b6;'>Pharmacy Portal 💊</h2>", unsafe_allow_html=True)
     if "phar_auth" not in st.session_state: st.session_state.phar_auth = False
     
     if not st.session_state.phar_auth:
@@ -242,26 +221,26 @@ elif st.session_state.current_page == "💊 Pharmacy":
             if st.form_submit_button("EMEZA"):
                 if pw == st.session_state.passwords["phar"]:
                     st.session_state.phar_auth = True
+                    st.session_state.login_attempts = 0
                     st.rerun()
-                else: st.error("Wrong Password!")
+                else:
+                    st.session_state.login_attempts += 1
+                    if st.session_state.login_attempts >= 3:
+                        st.session_state.system_shutdown = True
+                        st.rerun()
+                    st.error(f"Password si yo! Attempts: {st.session_state.login_attempts}/3")
     else:
-        if st.button("LOGOUT PHARMACY"): st.session_state.phar_auth = False; st.rerun()
-        
-        st.subheader("Fingerprint Verification & Meds")
-        phar_id = st.selectbox("Hitamo Umurwayi:", list(st.session_state.db.keys()))
-        
-        if st.button("☝️ SCAN FINGERPRINT (Verify)", use_container_width=True):
+        phar_id = st.selectbox("Scan Fingerprint (Select Patient):", list(st.session_state.db.keys()))
+        if st.button("☝️ VERIFY & VIEW PRESCRIPTION"):
             p = st.session_state.db[phar_id]
-            st.success(f"Verified: {p['izina']}")
             st.markdown(f"<div class='glass-card'><h4>Prescription for {p['izina']}:</h4><p>{p['meds']}</p></div>", unsafe_allow_html=True)
-            if st.button("EMEZA KO IMITI YAHAYE (Dispense)"):
+            if st.button("CONFIRM DISPENSE"):
                 p["status"] = "Completed"
-                st.success("Meds Dispensed Successfully!")
+                st.success("Meds Dispensed!")
 
-# --- PAGE: ADMIN (PASSWORD PROTECTED) ---
+# --- PAGE: ADMIN ---
 elif st.session_state.current_page == "⚙️ Admin":
-    st.markdown("<h2 style='text-align:center; color:#0077b6;'>Admin Control Center ⚙️</h2>", unsafe_allow_html=True)
-    
+    st.markdown("<h2 style='color:#0077b6;'>Admin Controller ⚙️</h2>", unsafe_allow_html=True)
     if "admin_auth" not in st.session_state: st.session_state.admin_auth = False
     
     if not st.session_state.admin_auth:
@@ -270,31 +249,25 @@ elif st.session_state.current_page == "⚙️ Admin":
             if st.form_submit_button("EMEZA"):
                 if pw == st.session_state.passwords["admin"]:
                     st.session_state.admin_auth = True
+                    st.session_state.login_attempts = 0
                     st.rerun()
-                else: st.error("Wrong Password!")
+                else:
+                    st.session_state.login_attempts += 1
+                    if st.session_state.login_attempts >= 3:
+                        st.session_state.system_shutdown = True
+                        st.rerun()
+                    st.error("Admin Password si yo!")
     else:
-        if st.button("LOGOUT ADMIN"): st.session_state.admin_auth = False; st.rerun()
-        
-        # PASSWORD MANAGEMENT
-        st.subheader("Password Management")
-        col1, col2 = st.columns(2)
-        with col1:
-            new_lab_pw = st.text_input("New Lab Password:", value=st.session_state.passwords["lab"])
-            new_phar_pw = st.text_input("New Pharmacy Password:", value=st.session_state.passwords["phar"])
-        with col2:
-            if st.button("UPDATE PASSWORDS"):
-                st.session_state.passwords["lab"] = new_lab_pw
-                st.session_state.passwords["phar"] = new_phar_pw
-                st.success("Passwords Updated!")
+        st.subheader("Manage Passwords")
+        new_lab = st.text_input("New Lab Password:", value=st.session_state.passwords["lab"])
+        new_phar = st.text_input("New Pharmacy Password:", value=st.session_state.passwords["phar"])
+        if st.button("UPDATE PASSWORDS"):
+            st.session_state.passwords["lab"], st.session_state.passwords["phar"] = new_lab, new_phar
+            st.success("Passwords Updated!")
         
         st.divider()
-        # DATA & DOWNLOADS
-        st.subheader("Patient Records & Reports")
-        df = pd.DataFrame.from_dict(st.session_state.db, orient='index')
-        st.dataframe(df, use_container_width=True)
-        
-        csv = df.to_csv().encode('utf-8')
-        st.download_button("📥 DOWNLOAD CSV REPORT", data=csv, file_name="BJ_TECH_REPORT.csv", mime="text/csv")
+        st.subheader("Full Database (Patient Records)")
+        st.write(pd.DataFrame.from_dict(st.session_state.db, orient='index'))
 
 # --- FOOTER ---
-st.markdown("<div style='position:fixed; bottom:10px; right:20px; font-size:12px; color:#0077b6; font-weight:bold;'>BJ TECH MEDICAL NANO-OS v4.2 | PROFESSIONAL 🛡️</div>", unsafe_allow_html=True)
+st.markdown("<div style='position:fixed; bottom:10px; right:20px; font-size:12px; color:#0077b6; font-weight:bold;'>BJ TECH AI MEDICAL OS v5.0 | SECURE 🛡️</div>", unsafe_allow_html=True)
