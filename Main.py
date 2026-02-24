@@ -1,24 +1,19 @@
 import streamlit as st
-import google.generativeai as genai
 from datetime import datetime
 import pytz
-import time
-import pandas as pd
 import random
-import plotly.graph_objects as go
+import pandas as pd
+import time
 
-# ===============================
+# =========================
 # CONFIG
-# ===============================
+# =========================
 st.set_page_config(page_title="BJ TECH HEALTH OS V8", layout="wide")
 KIGALI = pytz.timezone("Africa/Kigali")
 
-# ===============================
+# =========================
 # SESSION INIT
-# ===============================
-if "patients" not in st.session_state:
-    st.session_state.patients = {}
-
+# =========================
 if "attempts" not in st.session_state:
     st.session_state.attempts = 0
 
@@ -28,70 +23,79 @@ if "locked" not in st.session_state:
 if "page" not in st.session_state:
     st.session_state.page = "HOME"
 
-# ===============================
-# DARK CYBER STYLE
-# ===============================
+# =========================
+# DARK MEDICAL BLUE THEME
+# =========================
 st.markdown("""
 <style>
 header, footer {visibility:hidden;}
-.stApp {background-color:#0a0f1f;color:white;}
+
+.stApp {
+background-color:#071a2f;
+color:#ffffff;
+}
 
 .cyber-title {
-font-size:45px;
+font-size:48px;
 font-weight:bold;
 text-align:center;
-color:#00bfff;
-animation: glowMove 4s linear infinite;
-text-shadow:0 0 20px #00bfff;
+color:#00c3ff;
+text-shadow:0 0 25px #00c3ff;
+animation: moveText 4s infinite alternate;
 }
 
-@keyframes glowMove {
-0%{transform:translateX(-10px);}
-50%{transform:translateX(10px);}
-100%{transform:translateX(-10px);}
+@keyframes moveText {
+0%{letter-spacing:2px;}
+100%{letter-spacing:8px;}
 }
 
-.app-button button{
-background:linear-gradient(145deg,#001f3f,#003366);
-color:#00d9ff;
-height:120px;
-border-radius:20px;
+.medical-box {
+background-color:#0d2a4a;
+padding:20px;
+border-radius:15px;
+box-shadow:0 0 15px #008cff;
+text-align:center;
 font-size:18px;
 font-weight:bold;
-box-shadow:0 0 15px #00bfff;
+color:#00c3ff;
 }
 
-.ai-ring {
-width:60px;height:60px;
-border-radius:50%;
-margin:auto;
-background:conic-gradient(#00bfff,#0044ff,#00bfff);
-animation:spin 2s linear infinite;
+.stButton>button {
+background-color:#003366;
+color:#00c3ff;
+border-radius:12px;
+height:70px;
+font-size:16px;
+font-weight:bold;
 }
-@keyframes spin {100%{transform:rotate(360deg);}}
 
-.locked-screen{
-background:black;color:red;
-position:fixed;top:0;left:0;
+.locked {
+background:black;
+color:red;
+position:fixed;
+top:0;left:0;
 width:100vw;height:100vh;
-display:flex;justify-content:center;
+display:flex;
+justify-content:center;
 align-items:center;
 flex-direction:column;
-font-size:30px;
+font-size:28px;
 z-index:9999;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ===============================
-# LOCKDOWN
-# ===============================
+# =========================
+# LOCKDOWN MODE
+# =========================
 if st.session_state.locked:
     st.markdown("""
-    <div class="locked-screen">
-    🚨 CYBER HOSPITAL SERVER LOCKED 🚨
+    <div class="locked">
+    🚨 SYSTEM LOCKED 🚨<br>
+    Unauthorized Access
     </div>
     """, unsafe_allow_html=True)
+
     key = st.text_input("ENTER MASTER KEY", type="password")
     if st.button("REBOOT SYSTEM"):
         if key == "V8MASTER":
@@ -102,115 +106,99 @@ if st.session_state.locked:
             st.error("INVALID KEY")
     st.stop()
 
-# ===============================
+# =========================
 # HEADER
-# ===============================
+# =========================
 st.markdown("<div class='cyber-title'>BJ TECH HEALTH OS V8</div>", unsafe_allow_html=True)
 
 now = datetime.now(KIGALI).strftime("%H:%M:%S")
-st.markdown(f"<h4 style='text-align:center;color:#00bfff;'>KIGALI TIME: {now}</h4>", unsafe_allow_html=True)
+st.markdown(f"<h4 style='text-align:center;color:#00c3ff;'>KIGALI TIME: {now}</h4>", unsafe_allow_html=True)
 
-st.markdown("<div class='ai-ring'></div>", unsafe_allow_html=True)
 st.divider()
 
-# ===============================
-# HOME – APP STYLE ICONS
-# ===============================
+# =========================
+# HOME SCREEN (APP STYLE)
+# =========================
 if st.session_state.page == "HOME":
 
-    c1,c2,c3,c4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4)
 
-    with c1:
-        st.markdown("<div class='app-button'>", unsafe_allow_html=True)
+    with col1:
         if st.button("🩺 PATIENTS"):
-            st.session_state.page="PATIENTS"
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.session_state.page = "PATIENTS"
 
-    with c2:
-        st.markdown("<div class='app-button'>", unsafe_allow_html=True)
+    with col2:
         if st.button("🧪 LAB"):
-            st.session_state.page="LAB"
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.session_state.page = "LAB"
 
-    with c3:
-        st.markdown("<div class='app-button'>", unsafe_allow_html=True)
+    with col3:
         if st.button("💊 PHARMACY"):
-            st.session_state.page="PHARMACY"
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.session_state.page = "PHARMACY"
 
-    with c4:
-        st.markdown("<div class='app-button'>", unsafe_allow_html=True)
+    with col4:
         if st.button("⚙️ ADMIN"):
-            st.session_state.page="ADMIN"
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.session_state.page = "ADMIN"
 
-# ===============================
-# LIVE MONITORING DASHBOARD
-# ===============================
+# =========================
+# LIVE MONITORING (NO PLOTLY)
+# =========================
 elif st.session_state.page == "PATIENTS":
 
-    st.subheader("📊 LIVE PATIENT MONITORING")
+    st.subheader("📊 LIVE HEART MONITOR")
 
-    x = list(range(20))
-    y = [random.randint(60,100) for _ in x]
+    data = pd.DataFrame({
+        "BPM": [random.randint(60,100) for _ in range(30)]
+    })
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=x,y=y,mode='lines'))
-    fig.update_layout(template="plotly_dark",
-                      title="Heart Rate Monitor (BPM)",
-                      xaxis_title="Time",
-                      yaxis_title="BPM")
-
-    st.plotly_chart(fig, use_container_width=True)
+    st.line_chart(data)
 
     if st.button("BACK"):
-        st.session_state.page="HOME"
+        st.session_state.page = "HOME"
 
-# ===============================
+# =========================
 # LAB LOGIN
-# ===============================
-elif st.session_state.page=="LAB":
+# =========================
+elif st.session_state.page == "LAB":
     pw = st.text_input("LAB PASSWORD", type="password")
     if st.button("LOGIN"):
-        if pw=="labV8":
+        if pw == "labV8":
             st.success("LAB ACCESS GRANTED")
         else:
-            st.session_state.attempts+=1
-            if st.session_state.attempts>=3:
-                st.session_state.locked=True
+            st.session_state.attempts += 1
+            if st.session_state.attempts >= 3:
+                st.session_state.locked = True
                 st.rerun()
             st.error("WRONG PASSWORD")
 
-# ===============================
+# =========================
 # PHARMACY LOGIN
-# ===============================
-elif st.session_state.page=="PHARMACY":
+# =========================
+elif st.session_state.page == "PHARMACY":
     pw = st.text_input("PHARMACY PASSWORD", type="password")
     if st.button("LOGIN"):
-        if pw=="pharV8":
+        if pw == "pharV8":
             st.success("PHARMACY ACCESS GRANTED")
         else:
-            st.session_state.attempts+=1
-            if st.session_state.attempts>=3:
-                st.session_state.locked=True
+            st.session_state.attempts += 1
+            if st.session_state.attempts >= 3:
+                st.session_state.locked = True
                 st.rerun()
             st.error("WRONG PASSWORD")
 
-# ===============================
-# ADMIN
-# ===============================
-elif st.session_state.page=="ADMIN":
+# =========================
+# ADMIN LOGIN
+# =========================
+elif st.session_state.page == "ADMIN":
     pw = st.text_input("ADMIN PASSWORD", type="password")
     if st.button("LOGIN"):
-        if pw=="adminV8":
+        if pw == "adminV8":
             st.success("ADMIN ACCESS GRANTED")
-            st.write("SERVER CONTROL PANEL ACTIVE")
         else:
-            st.session_state.attempts+=1
-            if st.session_state.attempts>=3:
-                st.session_state.locked=True
+            st.session_state.attempts += 1
+            if st.session_state.attempts >= 3:
+                st.session_state.locked = True
                 st.rerun()
             st.error("WRONG PASSWORD")
 
 st.markdown("---")
-st.caption("BJ TECH HEALTH OS V8 ULTRA | CYBER DARK HOSPITAL EDITION")
+st.caption("BJ TECH HEALTH OS V8 ULTRA | DARK MEDICAL BLUE EDITION")
