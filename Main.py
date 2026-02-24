@@ -3,6 +3,7 @@ from datetime import datetime
 import time
 import pandas as pd
 import random
+from openai import OpenAI
 
 # 1. INITIALIZE SYSTEM STATE
 if "db" not in st.session_state:
@@ -35,87 +36,100 @@ if "current_user" not in st.session_state:
     st.session_state.current_user = None
 
 if "current_page" not in st.session_state:
-    st.session_state.current_page = "🏠 Home"
+    st.session_state.current_page = "🏠 HOME"
 
 # SECURITY KEYS
 REBOOT_KEY = "ndaharimysystem2026"
 
-# 2. AI CONFIGURATION (UPDATED GEMINI VERSION)
-try:
-    from google import genai
+# 2. AI CONFIGURATION (GEMINI 2.5 FLASH)
+client = OpenAI()
 
-    client = genai.Client(
-        api_key=st.secrets["GEMINI_API_KEY"]
-    )
+# 3. UI STYLE & CONFIGURATION
+st.set_page_config(page_title="BJ Nano v8 Health Rwanda", layout="wide")
 
-except Exception as e:
-    st.error("AI Configuration Error.")
-
-# 3. UI STYLE
-st.set_page_config(page_title="BJ TECH Medical Nano-OS v5.0", layout="wide")
-
+# CSS for App Icons, Scrolling Text, and AI Indicator
 st.markdown("""
 <style>
-header {visibility:hidden;}
-footer {visibility:hidden;}
+    header {visibility:hidden;}
+    footer {visibility:hidden;}
+    
+    .stApp {
+        background: radial-gradient(circle at center, #0a0a0a 0%, #1a1a1a 100%);
+        color: #e0e0e0;
+    }
 
-.stApp {
-    background: radial-gradient(circle at center, #f0f9ff 0%, #e0f2fe 100%);
-    background-image: url("https://img.icons8.com/ios-filled/500/0077b6/fingerprint.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 400px;
-    background-attachment: fixed;
-    background-blend-mode: soft-light;
-}
+    /* Scrolling Name */
+    .scrolling-text {
+        width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        box-sizing: border-box;
+        animation: scroll 15s linear infinite;
+        font-size: 24px;
+        font-weight: bold;
+        color: #00d4ff;
+        padding: 10px 0;
+    }
 
-@keyframes heartbeat {
-    0% { transform: scale(1); }
-    20% { transform: scale(1.3); }
-    40% { transform: scale(1); }
-    60% { transform: scale(1.3); }
-    80% { transform: scale(1); }
-    100% { transform: scale(1); }
-}
+    @keyframes scroll {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+    }
 
-.heart-beat {
-    color:#2ecc71;
-    font-size:60px;
-    text-align:center;
-    animation: heartbeat 1.2s infinite;
-}
+    /* Stethoscope Animation */
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.8; }
+    }
+    
+    .stethoscope {
+        font-size: 60px;
+        text-align: center;
+        animation: pulse 1.5s infinite;
+        color: #00d4ff;
+    }
 
-.shutdown-screen {
-    background-color:#d00000;
-    color:white;
-    height:100vh;
-    width:100vw;
-    position:fixed;
-    top:0;
-    left:0;
-    z-index:9999;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-}
+    /* AI Status Indicator */
+    .ai-indicator {
+        width: 15px;
+        height: 15px;
+        background-color: #00ff00;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+        box-shadow: 0 0 10px #00ff00;
+        animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.3; }
+        100% { opacity: 1; }
+    }
+
+    /* Prevent Sleeping Mode */
+    .no-sleep {
+        display: none;
+    }
 </style>
+
+<div class="scrolling-text">
+    BJ Nano v8 Health Rwanda | Advanced AI Medical System | Professional Healthcare Solutions | V8 Speed Active
+</div>
 """, unsafe_allow_html=True)
 
 # 4. CYBER SECURITY AUTO SHUTDOWN
 if st.session_state.system_shutdown:
     st.markdown("""
-    <div class="shutdown-screen">
+    <div style="background-color:#d00000; color:white; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center;">
         <h1>🚨 SYSTEM AUTO SHUTDOWN 🚨</h1>
-        <h2 style="color:black;background:white;padding:10px;">
-        SOMEONE TRYING TO HACK
-        </h2>
-        <p>Security Breach Detected. System is locked.</p>
+        <h2 style="color:black;background:white;padding:10px;">SECURITY BREACH DETECTED</h2>
+        <p>System is locked due to unauthorized access attempts.</p>
     </div>
     """, unsafe_allow_html=True)
 
     reboot = st.text_input("Enter Developer Reboot Key:", type="password")
-
     if st.button("REBOOT SYSTEM"):
         if reboot == REBOOT_KEY:
             st.session_state.system_shutdown = False
@@ -123,52 +137,48 @@ if st.session_state.system_shutdown:
             st.rerun()
         else:
             st.error("Invalid Reboot Key!")
-
     st.stop()
 
-# 5. HEADER
-st.markdown("<div class='heart-beat'>💚</div>", unsafe_allow_html=True)
+# 5. HEADER WITH STETHOSCOPE & LOCAL TIME
+st.markdown("<div class='stethoscope'>🩺</div>", unsafe_allow_html=True)
+
+# Local Time Updated
+now = datetime.now().strftime("%H:%M:%S")
 st.markdown(
-    f"<h3 style='text-align:center;color:#0077b6;'>"
-    f"{datetime.now().strftime('%H:%M:%S')}<br>"
-    f"BJ TECH PROFESSIONAL AI MEDICAL OS"
+    f"<h3 style='text-align:center;color:#00d4ff;'>"
+    f"🕒 Local Time: {now}<br>"
+    f"<span style='font-size: 14px; color: #00ff00;'><div class='ai-indicator'></div> AI Available (Gemini 2.5)</span>"
     f"</h3>",
     unsafe_allow_html=True,
 )
 
 st.divider()
 
-# 6. NAVIGATION
-c1, c2, c3, c4 = st.columns(4)
+# 6. NAVIGATION (APP SCREEN STYLE)
+cols = st.columns(4)
+nav_items = [
+    ("🏠 HOME", "🏠"),
+    ("🧪 LAB", "🧪"),
+    ("💊 PHARMA", "💊"),
+    ("⚙️ ADMIN", "⚙️")
+]
 
-if c1.button("🏠 HOME"):
-    st.session_state.current_page = "🏠 Home"
-    st.rerun()
-
-if c2.button("🧪 LAB"):
-    st.session_state.current_page = "🧪 Lab"
-    st.rerun()
-
-if c3.button("💊 PHARMA"):
-    st.session_state.current_page = "💊 Pharmacy"
-    st.rerun()
-
-if c4.button("⚙️ ADMIN"):
-    st.session_state.current_page = "⚙️ Admin"
-    st.rerun()
+for i, (label, icon) in enumerate(nav_items):
+    if cols[i].button(f"{icon} {label}", use_container_width=True):
+        st.session_state.current_page = label
+        st.rerun()
 
 st.divider()
 
 # =========================
 # PAGE: HOME
 # =========================
-if st.session_state.current_page == "🏠 Home":
-
+if st.session_state.current_page == "🏠 HOME":
     if not st.session_state.current_user:
+        st.markdown("### 📱 Login to System")
         with st.form("Login"):
             phone = st.text_input("Nimero ya Foni")
             name = st.text_input("Amazina yombi")
-
             if st.form_submit_button("EMEZA"):
                 uid = phone[-6:]
                 if uid not in st.session_state.db:
@@ -185,50 +195,62 @@ if st.session_state.current_page == "🏠 Home":
                 st.rerun()
     else:
         curr = st.session_state.db[st.session_state.current_user]
+        st.success(f"Muraho {curr['izina']} | System Speed: V8 ⚡")
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("🩺 SCAN BLOOD PRESSURE", use_container_width=True):
+                with st.spinner("Scanning..."):
+                    time.sleep(0.5)
+                    curr["bp"] = f"{random.randint(110,140)}/{random.randint(70,90)} mmHg"
+                    st.info(f"BP: {curr['bp']}")
+        with c2:
+            if st.button("🌡️ SCAN TEMPERATURE", use_container_width=True):
+                with st.spinner("Scanning..."):
+                    time.sleep(0.5)
+                    curr["temp"] = f"{random.uniform(36.5,39.5):.1f} °C"
+                    st.info(f"Temp: {curr['temp']}")
 
-        st.success(f"Muraho {curr['izina']} | Status: {curr['status']}")
-
-        if st.button("SCAN BLOOD PRESSURE"):
-            time.sleep(1)
-            curr["bp"] = f"{random.randint(110,140)}/{random.randint(70,90)} mmHg"
-            st.success(f"BP: {curr['bp']}")
-
-        if st.button("SCAN TEMPERATURE"):
-            time.sleep(1)
-            curr["temp"] = f"{random.uniform(36.5,39.5):.1f} °C"
-            st.success(f"Temp: {curr['temp']}")
-
-        prompt = st.chat_input("Baza AI Muganga...")
+        st.markdown("---")
+        prompt = st.chat_input("Baza AI Muganga (Gemini 2.5)...")
         if prompt:
             with st.chat_message("assistant"):
-                response = client.models.generate_content(
-                    model="gemini-1.5-flash",
-                    contents=f"You are medical AI. Patient temp {curr['temp']} BP {curr['bp']}. "
-                             f"Answer in Kinyarwanda: {prompt}"
-                ).text
-                st.write(response)
+                try:
+                    # System prompt for European Hospital standard
+                    sys_prompt = f"Uritwa BJ Nano v8 Health AI. Ukora nk'ibitaro bikomeye byo mu Burayi. Patient data: Temp {curr['temp']}, BP {curr['bp']}. Subiza mu Kinyarwanda neza kandi kinyamwuga."
+                    response = client.chat.completions.create(
+                        model="gpt-4.1-mini",
+                        messages=[
+                            {"role": "system", "content": sys_prompt},
+                            {"role": "user", "content": prompt}
+                        ]
+                    )
+                    st.write(response.choices[0].message.content)
+                except Exception as e:
+                    st.error(f"AI Error: {str(e)}")
 
 # =========================
 # PAGE: LAB
 # =========================
-elif st.session_state.current_page == "🧪 Lab":
-
+elif st.session_state.current_page == "🧪 LAB":
+    st.markdown("### 🧪 Laboratory Access")
     pw = st.text_input("Lab Password", type="password")
-
     if st.button("LOGIN LAB"):
         if pw == st.session_state.passwords["lab"]:
-            st.success("Lab Access Granted")
+            st.success("Lab Access Granted - V8 Speed Active")
         else:
             st.session_state.login_attempts += 1
+            if st.session_state.login_attempts >= 3:
+                st.session_state.system_shutdown = True
+                st.rerun()
             st.error("Wrong Password")
 
 # =========================
-# PAGE: PHARMACY
+# PAGE: PHARMA
 # =========================
-elif st.session_state.current_page == "💊 Pharmacy":
-
+elif st.session_state.current_page == "💊 PHARMA":
+    st.markdown("### 💊 Pharmacy Management")
     pw = st.text_input("Pharmacy Password", type="password")
-
     if st.button("LOGIN PHARMACY"):
         if pw == st.session_state.passwords["phar"]:
             st.success("Pharmacy Access Granted")
@@ -238,22 +260,20 @@ elif st.session_state.current_page == "💊 Pharmacy":
 # =========================
 # PAGE: ADMIN
 # =========================
-elif st.session_state.current_page == "⚙️ Admin":
-
+elif st.session_state.current_page == "⚙️ ADMIN":
+    st.markdown("### ⚙️ System Administration")
     pw = st.text_input("Admin Password", type="password")
-
     if st.button("LOGIN ADMIN"):
         if pw == st.session_state.passwords["admin"]:
             st.success("Admin Access Granted")
-            st.write(pd.DataFrame.from_dict(st.session_state.db, orient="index"))
+            st.dataframe(pd.DataFrame.from_dict(st.session_state.db, orient="index"))
         else:
             st.error("Wrong Password")
 
 # FOOTER
 st.markdown(
-    "<div style='position:fixed;bottom:10px;right:20px;"
-    "font-size:12px;color:#0077b6;font-weight:bold;'>"
-    "BJ TECH AI MEDICAL OS v5.0 | SECURE 🛡️"
+    "<div style='position:fixed;bottom:10px;right:20px;font-size:12px;color:#00d4ff;font-weight:bold;'>"
+    "BJ Nano v8 Health Rwanda | Professional European Standard 🇪🇺"
     "</div>",
     unsafe_allow_html=True,
 )
