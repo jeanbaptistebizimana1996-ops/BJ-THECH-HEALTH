@@ -26,7 +26,7 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = "🏠 HOME"
 
 if "scan_status" not in st.session_state:
-    st.session_state.scan_status = "idle" # idle, scanning, success, error
+    st.session_state.scan_status = "idle"
 
 # SECURITY KEYS
 REBOOT_KEY = "ndaharimysystem2026"
@@ -57,14 +57,15 @@ def play_sound(sound_type):
 # Dynamic Background Color based on Scan Status
 bg_color = "rgba(10,10,10,0.9)"
 if st.session_state.scan_status == "scanning":
-    bg_color = "rgba(255, 0, 0, 0.4)" # Red while scanning
+    bg_color = "rgba(255, 0, 0, 0.4)" 
 elif st.session_state.scan_status == "success":
-    bg_color = "rgba(0, 255, 0, 0.4)" # Green on success
+    bg_color = "rgba(0, 255, 0, 0.4)"
 
+# KOSORA: Hano nakoresheje {{ }} kugira ngo f-string itazamo error
 st.markdown(f"""
 <style>
-    header {{visibility:hidden;}}
-    footer {{visibility:hidden;}}
+    header {{ visibility:hidden; }}
+    footer {{ visibility:hidden; }}
     
     .stApp {{
         background: radial-gradient(circle at center, {bg_color} 0%, rgba(26,26,26,0.95) 100%), 
@@ -76,7 +77,7 @@ st.markdown(f"""
         background-blend-mode: overlay;
         color: #e0e0e0;
         transition: background 0.5s ease;
-    }
+    }}
 
     .scrolling-text {{
         width: 100%;
@@ -157,6 +158,7 @@ if st.session_state.current_page == "🏠 HOME":
             phone = st.text_input("Phone")
             if st.form_submit_button("REGISTER & SCAN"):
                 st.session_state.scan_status = "scanning"
+                # Simulating scan time
                 time.sleep(1)
                 fid = f"FP-{random.randint(1000, 9999)}"
                 st.session_state.db[fid] = {
