@@ -7,248 +7,225 @@ import pandas as pd
 import random
 
 # ===============================
-# CONFIG
+# PAGE CONFIG
 # ===============================
-st.set_page_config(page_title="BJ TECH MEDICAL NANO OS v6.0", layout="wide")
+st.set_page_config(page_title="BJ TECH HOSPITAL OS v7.0", layout="wide")
 
-KIGALI_TZ = pytz.timezone("Africa/Kigali")
+KIGALI = pytz.timezone("Africa/Kigali")
 
 # ===============================
 # SESSION INIT
 # ===============================
-if "db" not in st.session_state:
-    st.session_state.db = {
-        "119958": {
-            "izina": "Habineza",
-            "phone": "0788000000",
-            "results": "",
-            "meds": "",
-            "status": "New",
-            "bp": "N/A",
-            "temp": "N/A",
-        }
-    }
+if "patients" not in st.session_state:
+    st.session_state.patients = {}
 
 if "passwords" not in st.session_state:
     st.session_state.passwords = {
-        "admin": "admin.2026",
-        "lab": "lab.2026",
-        "phar": "phar.2026",
+        "admin": "admin.v7",
+        "lab": "lab.v7",
+        "pharmacy": "phar.v7"
     }
 
 if "reboot_key" not in st.session_state:
-    st.session_state.reboot_key = "reboot.v6.2026"
+    st.session_state.reboot_key = "reboot.v7"
 
-if "login_attempts" not in st.session_state:
-    st.session_state.login_attempts = 0
+if "attempts" not in st.session_state:
+    st.session_state.attempts = 0
 
-if "shutdown" not in st.session_state:
-    st.session_state.shutdown = False
+if "locked" not in st.session_state:
+    st.session_state.locked = False
 
-if "current_page" not in st.session_state:
-    st.session_state.current_page = "HOME"
+if "page" not in st.session_state:
+    st.session_state.page = "HOME"
 
 # ===============================
 # AI CONFIG
 # ===============================
-AI_AVAILABLE = True
+AI_ONLINE = True
 try:
     api_key = st.secrets.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-1.5-flash")
 except:
-    AI_AVAILABLE = False
+    AI_ONLINE = False
 
 # ===============================
 # STYLE
 # ===============================
 st.markdown("""
 <style>
-header {visibility:hidden;}
-footer {visibility:hidden;}
+header, footer {visibility:hidden;}
 
 .stApp {
-background: linear-gradient(135deg,#e0f7ff,#ffffff);
+background: linear-gradient(135deg,#dff6ff,#ffffff);
 }
 
-.stethoscope {
-font-size:70px;
-text-align:center;
-}
-
-.ai-light {
-width:60px;
-height:60px;
-border-radius:50%;
+.ai-ring {
+width:70px;height:70px;border-radius:50%;
 margin:auto;
+background:conic-gradient(red,orange,yellow,green,blue,violet,red);
 animation:spin 3s linear infinite;
-background: conic-gradient(red,orange,yellow,green,blue,indigo,violet,red);
 }
 
-@keyframes spin {
-100% {transform: rotate(360deg);}
-}
+@keyframes spin {100%{transform:rotate(360deg);}}
 
-.shutdown {
-background:red;
-color:white;
-position:fixed;
-top:0;left:0;
-height:100vh;width:100vw;
-display:flex;
-flex-direction:column;
-justify-content:center;
+.locked-screen{
+background:black;color:red;
+position:fixed;top:0;left:0;
+width:100vw;height:100vh;
+display:flex;justify-content:center;
 align-items:center;
-z-index:9999;
+flex-direction:column;
 font-size:30px;
+z-index:9999;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ===============================
-# AUTO SHUTDOWN
+# LOCKDOWN MODE
 # ===============================
-if st.session_state.shutdown:
+if st.session_state.locked:
     st.markdown("""
-    <div class="shutdown">
-    🚨 SYSTEM SHUTDOWN ACTIVE 🚨<br>
-    Unauthorized Access Detected
+    <div class="locked-screen">
+    🚨 HOSPITAL SERVER LOCKED 🚨<br>
+    Security Breach Detected
     </div>
     """, unsafe_allow_html=True)
 
-    key = st.text_input("Enter Reboot Key", type="password")
-    if st.button("REBOOT SYSTEM"):
+    key = st.text_input("ENTER REBOOT KEY", type="password")
+    if st.button("REBOOT SERVER"):
         if key == st.session_state.reboot_key:
-            st.session_state.shutdown = False
-            st.session_state.login_attempts = 0
+            st.session_state.locked = False
+            st.session_state.attempts = 0
             st.rerun()
         else:
-            st.error("Wrong Reboot Key")
+            st.error("INVALID REBOOT KEY")
     st.stop()
 
 # ===============================
 # HEADER
 # ===============================
-st.markdown("<div class='stethoscope'>🩺</div>", unsafe_allow_html=True)
+st.title("🩺 BJ TECH REAL HOSPITAL OS v7.0")
 
-now = datetime.now(KIGALI_TZ).strftime("%H:%M:%S")
-st.markdown(f"<h2 style='text-align:center;color:#0077b6;'>KIGALI LOCAL TIME: {now}</h2>", unsafe_allow_html=True)
+now = datetime.now(KIGALI).strftime("%H:%M:%S")
+st.markdown(f"### 🕒 Kigali Time: {now}")
 
-if AI_AVAILABLE:
-    st.markdown("<div class='ai-light'></div>", unsafe_allow_html=True)
+if AI_ONLINE:
+    st.markdown("<div class='ai-ring'></div>", unsafe_allow_html=True)
+    st.success("AI SERVER ONLINE")
+else:
+    st.error("AI OFFLINE")
 
 st.divider()
 
 # ===============================
 # NAVIGATION
 # ===============================
-c1, c2, c3, c4 = st.columns(4)
-
-if c1.button("HOME"):
-    st.session_state.current_page = "HOME"
-if c2.button("LAB"):
-    st.session_state.current_page = "LAB"
-if c3.button("PHARMACY"):
-    st.session_state.current_page = "PHARMACY"
-if c4.button("ADMIN"):
-    st.session_state.current_page = "ADMIN"
+c1,c2,c3,c4 = st.columns(4)
+if c1.button("HOME"): st.session_state.page="HOME"
+if c2.button("LAB"): st.session_state.page="LAB"
+if c3.button("PHARMACY"): st.session_state.page="PHARMACY"
+if c4.button("ADMIN"): st.session_state.page="ADMIN"
 
 st.divider()
 
 # ===============================
-# HOME
+# HOME – PATIENT MONITOR
 # ===============================
-if st.session_state.current_page == "HOME":
-    st.title("Patient AI Diagnostics")
+if st.session_state.page=="HOME":
+    st.subheader("Patient Registration & Monitoring")
 
-    phone = st.text_input("Phone")
     name = st.text_input("Full Name")
+    phone = st.text_input("Phone Number")
 
-    if st.button("REGISTER"):
-        uid = phone[-6:]
-        st.session_state.db[uid] = {
-            "izina": name,
-            "phone": phone,
-            "results": "",
-            "meds": "",
-            "status": "New",
-            "bp": "N/A",
-            "temp": "N/A",
+    if st.button("REGISTER PATIENT"):
+        pid = phone[-6:]
+        st.session_state.patients[pid] = {
+            "Name": name,
+            "BP": "N/A",
+            "Temp": "N/A",
+            "Status": "New"
         }
-        st.success("Registered")
+        st.success("Patient Registered Successfully")
+
+    if st.session_state.patients:
+        st.write(pd.DataFrame.from_dict(st.session_state.patients, orient="index"))
+
+    st.divider()
+    st.subheader("🖐 Fingerprint Biometric Scan")
+
+    if st.button("SCAN PATIENT"):
+        with st.spinner("Scanning Fingerprint..."):
+            time.sleep(2)
+            st.audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3")
+            bp = f"{random.randint(110,140)}/{random.randint(70,90)}"
+            temp = f"{random.uniform(36.5,39.5):.1f}"
+            st.success(f"BP: {bp} | Temp: {temp}")
 
 # ===============================
 # LAB
 # ===============================
-elif st.session_state.current_page == "LAB":
-
+elif st.session_state.page=="LAB":
     pw = st.text_input("Lab Password", type="password")
-    if st.button("LOGIN LAB"):
-        if pw == st.session_state.passwords["lab"]:
-            st.success("Access Granted")
+    if st.button("LOGIN"):
+        if pw==st.session_state.passwords["lab"]:
+            st.success("Lab Access Granted")
         else:
-            st.session_state.login_attempts += 1
-            if st.session_state.login_attempts >= 3:
-                st.session_state.shutdown = True
+            st.session_state.attempts+=1
+            if st.session_state.attempts>=3:
+                st.session_state.locked=True
                 st.rerun()
             st.error("Wrong Password")
 
 # ===============================
 # PHARMACY
 # ===============================
-elif st.session_state.current_page == "PHARMACY":
-
+elif st.session_state.page=="PHARMACY":
     pw = st.text_input("Pharmacy Password", type="password")
-    if st.button("LOGIN PHARMACY"):
-        if pw == st.session_state.passwords["phar"]:
-            st.success("Access Granted")
+    if st.button("LOGIN"):
+        if pw==st.session_state.passwords["pharmacy"]:
+            st.success("Pharmacy Access Granted")
         else:
-            st.session_state.login_attempts += 1
-            if st.session_state.login_attempts >= 3:
-                st.session_state.shutdown = True
+            st.session_state.attempts+=1
+            if st.session_state.attempts>=3:
+                st.session_state.locked=True
                 st.rerun()
             st.error("Wrong Password")
 
 # ===============================
-# ADMIN ADVANCED CONTROLLER
+# ADMIN SERVER CONTROL
 # ===============================
-elif st.session_state.current_page == "ADMIN":
-
+elif st.session_state.page=="ADMIN":
     pw = st.text_input("Admin Password", type="password")
+    if st.button("LOGIN"):
+        if pw==st.session_state.passwords["admin"]:
+            st.success("ADMIN SERVER ACCESS GRANTED")
 
-    if st.button("LOGIN ADMIN"):
-        if pw == st.session_state.passwords["admin"]:
-            st.success("Admin Access Granted")
+            st.subheader("Server Settings")
 
-            st.subheader("Change ALL Passwords")
             new_admin = st.text_input("New Admin Password")
             new_lab = st.text_input("New Lab Password")
             new_phar = st.text_input("New Pharmacy Password")
             new_reboot = st.text_input("New Reboot Key")
 
-            if st.button("UPDATE SETTINGS"):
-                if new_admin: st.session_state.passwords["admin"] = new_admin
-                if new_lab: st.session_state.passwords["lab"] = new_lab
-                if new_phar: st.session_state.passwords["phar"] = new_phar
-                if new_reboot: st.session_state.reboot_key = new_reboot
-                st.success("All Settings Updated")
+            if st.button("UPDATE SERVER SETTINGS"):
+                if new_admin: st.session_state.passwords["admin"]=new_admin
+                if new_lab: st.session_state.passwords["lab"]=new_lab
+                if new_phar: st.session_state.passwords["pharmacy"]=new_phar
+                if new_reboot: st.session_state.reboot_key=new_reboot
+                st.success("Server Updated Successfully")
 
             st.divider()
-            st.subheader("Full Database")
-            st.write(pd.DataFrame.from_dict(st.session_state.db, orient="index"))
-
-            if st.button("SYSTEM RESET"):
-                st.session_state.db = {}
-                st.success("System Reset Complete")
+            st.write("LIVE DATABASE")
+            st.write(pd.DataFrame.from_dict(st.session_state.patients, orient="index"))
 
         else:
-            st.session_state.login_attempts += 1
-            if st.session_state.login_attempts >= 3:
-                st.session_state.shutdown = True
+            st.session_state.attempts+=1
+            if st.session_state.attempts>=3:
+                st.session_state.locked=True
                 st.rerun()
             st.error("Wrong Admin Password")
 
-# ===============================
-# FOOTER
-# ===============================
-st.markdown("<div style='position:fixed;bottom:10px;right:20px;font-size:12px;color:#0077b6;font-weight:bold;'>BJ TECH MEDICAL NANO OS v6.0 | ULTRA SECURE</div>", unsafe_allow_html=True)
+st.markdown("---")
+st.caption("BJ TECH REAL HOSPITAL SERVER OS v7.0 | ULTRA SECURE")
