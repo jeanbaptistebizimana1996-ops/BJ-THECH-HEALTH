@@ -23,6 +23,8 @@ if "current_user" not in st.session_state:
     st.session_state.current_user = None
 if "system_locked" not in st.session_state:
     st.session_state.system_locked = False
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "🏠 Home"
 
 # 2. AI CONFIGURATION
 try:
@@ -32,8 +34,26 @@ try:
 except:
     st.error("AI Configuration Error.")
 
-# 3. UI STYLE (MEDICAL NANO-TECH v4.0)
-st.set_page_config(page_title="BJ TECH Medical Nano-OS v4.0", layout="wide")
+# 3. UI STYLE (MEDICAL NANO-TECH v4.2)
+st.set_page_config(page_title="BJ TECH Medical Nano-OS v4.2", layout="wide")
+
+# JavaScript for Real-Time Clock Update
+st.markdown("""
+<script>
+    function updateClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timeString = hours + ":" + minutes + ":" + seconds;
+        const clockElement = window.parent.document.querySelector('.large-clock');
+        if (clockElement) {
+            clockElement.innerText = timeString;
+        }
+    }
+    setInterval(updateClock, 1000);
+</script>
+""", unsafe_allow_html=True)
 
 st.markdown(f"""
 <style>
@@ -47,13 +67,6 @@ st.markdown(f"""
         background-size: 400px;
         background-attachment: fixed;
         background-blend-mode: soft-light;
-    }}
-    
-    /* Sidebar Styling */
-    [data-testid="stSidebar"] {{
-        background-color: rgba(255, 255, 255, 0.8) !important;
-        backdrop-filter: blur(15px);
-        border-right: 2px solid #0077b6;
     }}
     
     .glass-card {{
@@ -73,36 +86,36 @@ st.markdown(f"""
         border: none !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
+        height: 80px;
+        font-size: 20px !important;
+        box-shadow: 0 4px 15px rgba(0, 119, 182, 0.2);
     }}
-    
-    .heart-icon {{
-        color: #2ecc71;
-        font-size: 40px;
-        text-align: center;
-        margin-bottom: 10px;
+    .stButton>button:hover {{
+        background-color: #0096c7 !important;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 119, 182, 0.3);
     }}
     
     .large-clock {{
-        font-size: 50px;
+        font-size: 80px;
         font-weight: bold;
         color: #0077b6;
         text-align: center;
         font-family: 'Courier New', monospace;
+        text-shadow: 0 0 15px rgba(0, 119, 182, 0.3);
+        margin-bottom: 20px;
+    }}
+    
+    .heart-icon {{
+        color: #2ecc71;
+        font-size: 60px;
+        text-align: center;
+        margin-bottom: 10px;
     }}
 </style>
 """, unsafe_allow_html=True)
 
-# 4. SIDEBAR NAVIGATION
-with st.sidebar:
-    st.markdown("<div class='heart-icon'>💚</div>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:#0077b6;'>BJ TECH</h2>", unsafe_allow_html=True)
-    st.divider()
-    page = st.radio("MENU:", ["🏠 Home", "🧪 Laboratory", "💊 Pharmacy", "⚙️ Admin"])
-    st.divider()
-    st.markdown(f"<div class='large-clock'>{datetime.now().strftime('%H:%M')}</div>", unsafe_allow_html=True)
-    st.info("Secure Nano-Shield Active")
-
-# 5. CYBER-SECURITY LOCKDOWN
+# 4. CYBER-SECURITY LOCKDOWN
 if st.session_state.system_locked:
     st.error("🚨 SECURITY BREACH! SYSTEM LOCKED")
     unlock = st.text_input("Admin Key:", type="password")
@@ -112,15 +125,45 @@ if st.session_state.system_locked:
             st.rerun()
     st.stop()
 
-# --- PAGE: HOME ---
-if page == "🏠 Home":
-    st.markdown("<h1 style='text-align:center; color:#0077b6;'>BJ TECH Medical OS</h1>", unsafe_allow_html=True)
+# 5. HEADER & CLOCK
+st.markdown("<div class='heart-icon'>💚</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='large-clock'>{datetime.now().strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center; color:#0077b6; margin-top:-20px;'>BJ TECH MEDICAL NANO-OS</h2>", unsafe_allow_html=True)
+
+# 6. MAIN NAVIGATION ICONS (ON SCREEN)
+st.divider()
+nav_col1, nav_col2, nav_col3, nav_col4 = st.columns(4)
+
+with nav_col1:
+    if st.button("🏠 HOME\n(Patient)", use_container_width=True):
+        st.session_state.current_page = "🏠 Home"
+        st.rerun()
+
+with nav_col2:
+    if st.button("🧪 LAB\n(Staff)", use_container_width=True):
+        st.session_state.current_page = "🧪 Lab"
+        st.rerun()
+
+with nav_col3:
+    if st.button("💊 PHARMA\n(Meds)", use_container_width=True):
+        st.session_state.current_page = "💊 Pharmacy"
+        st.rerun()
+
+with nav_col4:
+    if st.button("⚙️ ADMIN\n(Control)", use_container_width=True):
+        st.session_state.current_page = "⚙️ Admin"
+        st.rerun()
+st.divider()
+
+# --- PAGE: HOME (PATIENT) ---
+if st.session_state.current_page == "🏠 Home":
+    st.markdown("<h2 style='text-align:center; color:#0077b6;'>Patient Access Portal</h2>", unsafe_allow_html=True)
     
     if not st.session_state.current_user:
         with st.form("PatientLogin"):
-            st.subheader("Patient Access")
-            p_phone = st.text_input("Phone Number:")
-            p_name = st.text_input("Full Name:")
+            st.subheader("Kwinjira / Kwiyandikisha")
+            p_phone = st.text_input("Nimero ya Foni:")
+            p_name = st.text_input("Amazina yombi:")
             if st.form_submit_button("EMEZA KWINJIRA"):
                 uid = p_phone[-6:]
                 if uid not in st.session_state.db:
@@ -135,7 +178,7 @@ if page == "🏠 Home":
             st.rerun()
         
         # AI Chat
-        st.subheader("Baza AI Muganga")
+        st.subheader("Baza AI Muganga (Medical AI)")
         for m in st.session_state.messages:
             with st.chat_message(m["role"]): st.write(m["content"])
         if prompt := st.chat_input("Andika hano..."):
@@ -146,9 +189,9 @@ if page == "🏠 Home":
                 st.write(res)
                 st.session_state.messages.append({"role": "assistant", "content": res})
 
-# --- PAGE: LAB ---
-elif page == "🧪 Laboratory":
-    st.markdown("<h2 style='color:#0077b6;'>Laboratory Portal 🧪</h2>", unsafe_allow_html=True)
+# --- PAGE: LAB (PASSWORD PROTECTED) ---
+elif st.session_state.current_page == "🧪 Lab":
+    st.markdown("<h2 style='text-align:center; color:#0077b6;'>Laboratory Portal 🧪</h2>", unsafe_allow_html=True)
     
     if "lab_auth" not in st.session_state: st.session_state.lab_auth = False
     
@@ -163,29 +206,33 @@ elif page == "🧪 Laboratory":
     else:
         if st.button("LOGOUT LAB"): st.session_state.lab_auth = False; st.rerun()
         
-        st.subheader("Fingerprint Scan")
-        lab_id = st.selectbox("Hitamo Umurwayi (Scan Fingerprint):", list(st.session_state.db.keys()))
+        st.subheader("Fingerprint Scan & Results")
+        lab_id = st.selectbox("Hitamo Umurwayi:", list(st.session_state.db.keys()))
         
-        if st.button("☝️ SCAN FINGERPRINT", use_container_width=True):
+        if st.button("☝️ SCAN FINGERPRINT (Verify)", use_container_width=True):
             st.success(f"Verified: {st.session_state.db[lab_id]['izina']}")
             st.session_state.active_lab_user = lab_id
             
         if "active_lab_user" in st.session_state:
             p = st.session_state.db[st.session_state.active_lab_user]
-            tests = st.multiselect("Indwara basanze:", ["Malaria", "Typhoid", "Amoeba", "Infection", "Flu"])
+            tests = st.multiselect("Indwara basanze:", ["Malaria", "Typhoid", "Amoeba", "Infection", "Flu", "UTI", "Diabetes"])
             if st.button("EMEZA NO KOHEREZA SMS (AI)"):
-                all_t = ", ".join(tests)
-                p["results"] = all_t
-                p["status"] = "Results Ready"
-                # AI Prescription Logic
-                ai_prescription = model.generate_content(f"Patient {p['izina']} has {all_t}. Prescribe meds in Kinyarwanda briefly.").text
-                p["meds"] = ai_prescription
-                st.success("Results & AI Prescription Sent!")
-                st.info(f"SMS Sent to {p['phone']}")
+                if not tests:
+                    st.warning("Hitamo nibura indwara imwe!")
+                else:
+                    all_t = ", ".join(tests)
+                    p["results"] = all_t
+                    p["status"] = "Results Ready"
+                    # AI Prescription Logic
+                    with st.spinner("AI iri gutegura imiti..."):
+                        ai_prescription = model.generate_content(f"Patient {p['izina']} has {all_t}. Prescribe meds in Kinyarwanda briefly.").text
+                        p["meds"] = ai_prescription
+                    st.success("Results & AI Prescription Sent!")
+                    st.info(f"SMS Sent to {p['phone']}")
 
-# --- PAGE: PHARMACY ---
-elif page == "💊 Pharmacy":
-    st.markdown("<h2 style='color:#0077b6;'>Pharmacy Portal 💊</h2>", unsafe_allow_html=True)
+# --- PAGE: PHARMACY (PASSWORD PROTECTED) ---
+elif st.session_state.current_page == "💊 Pharmacy":
+    st.markdown("<h2 style='text-align:center; color:#0077b6;'>Pharmacy Portal 💊</h2>", unsafe_allow_html=True)
     
     if "phar_auth" not in st.session_state: st.session_state.phar_auth = False
     
@@ -200,20 +247,20 @@ elif page == "💊 Pharmacy":
     else:
         if st.button("LOGOUT PHARMACY"): st.session_state.phar_auth = False; st.rerun()
         
-        st.subheader("Fingerprint Verification")
-        phar_id = st.selectbox("Hitamo Umurwayi (Scan Fingerprint):", list(st.session_state.db.keys()))
+        st.subheader("Fingerprint Verification & Meds")
+        phar_id = st.selectbox("Hitamo Umurwayi:", list(st.session_state.db.keys()))
         
-        if st.button("☝️ SCAN FINGERPRINT", use_container_width=True):
+        if st.button("☝️ SCAN FINGERPRINT (Verify)", use_container_width=True):
             p = st.session_state.db[phar_id]
             st.success(f"Verified: {p['izina']}")
             st.markdown(f"<div class='glass-card'><h4>Prescription for {p['izina']}:</h4><p>{p['meds']}</p></div>", unsafe_allow_html=True)
-            if st.button("CONFIRM DISPENSE"):
+            if st.button("EMEZA KO IMITI YAHAYE (Dispense)"):
                 p["status"] = "Completed"
                 st.success("Meds Dispensed Successfully!")
 
-# --- PAGE: ADMIN ---
-elif page == "⚙️ Admin":
-    st.markdown("<h2 style='color:#0077b6;'>Admin Control Center ⚙️</h2>", unsafe_allow_html=True)
+# --- PAGE: ADMIN (PASSWORD PROTECTED) ---
+elif st.session_state.current_page == "⚙️ Admin":
+    st.markdown("<h2 style='text-align:center; color:#0077b6;'>Admin Control Center ⚙️</h2>", unsafe_allow_html=True)
     
     if "admin_auth" not in st.session_state: st.session_state.admin_auth = False
     
@@ -242,7 +289,7 @@ elif page == "⚙️ Admin":
         
         st.divider()
         # DATA & DOWNLOADS
-        st.subheader("Patient Records")
+        st.subheader("Patient Records & Reports")
         df = pd.DataFrame.from_dict(st.session_state.db, orient='index')
         st.dataframe(df, use_container_width=True)
         
@@ -250,4 +297,4 @@ elif page == "⚙️ Admin":
         st.download_button("📥 DOWNLOAD CSV REPORT", data=csv, file_name="BJ_TECH_REPORT.csv", mime="text/csv")
 
 # --- FOOTER ---
-st.markdown("<div style='position:fixed; bottom:10px; right:20px; font-size:12px; color:#0077b6; font-weight:bold;'>BJ TECH MEDICAL NANO-OS v4.0 | PROFESSIONAL EDITION 🛡️</div>", unsafe_allow_html=True)
+st.markdown("<div style='position:fixed; bottom:10px; right:20px; font-size:12px; color:#0077b6; font-weight:bold;'>BJ TECH MEDICAL NANO-OS v4.2 | PROFESSIONAL 🛡️</div>", unsafe_allow_html=True)
