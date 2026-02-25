@@ -1,9 +1,11 @@
 import streamlit as st
+import google.generativeai as genai
 from datetime import datetime
 import time
 import pandas as pd
 import random
 import pytz
+import os
 
 # 1. INITIALIZE SYSTEM STATE
 if "db" not in st.session_state:
@@ -34,16 +36,15 @@ if "scan_status" not in st.session_state:
 # SECURITY KEYS
 REBOOT_KEY = "ndaharimysystem2026"
 
-# 2. AI CONFIGURATION
+# 2. AI CONFIGURATION (USING YOUR PROVIDED CODE LOGIC)
 try:
-    import google.generativeai as genai
-    if "GEMINI_API_KEY" in st.secrets:
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-1.5-flash')
-    else:
-        model = None
-except Exception:
+    # Koresha GOOGLE_API_KEY yo muri Secrets nk'uko ubisabye
+    api_key = st.secrets["GOOGLE_API_KEY"]
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
     model = None
+    st.error("AI Configuration Error: Check GOOGLE_API_KEY in Secrets.")
 
 # 3. UI STYLE & CONFIGURATION
 st.set_page_config(page_title="BJ Nano v8 Health Rwanda", layout="wide")
@@ -56,13 +57,14 @@ def play_sound(sound_type):
     }
     st.markdown(f'<audio autoplay><source src="{urls[sound_type]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
 
-# Dynamic Background
+# Dynamic Background based on Scan Status
 bg_color = "rgba(10,10,10,0.9)"
 if st.session_state.scan_status == "scanning":
     bg_color = "rgba(255, 0, 0, 0.4)" 
 elif st.session_state.scan_status == "success":
     bg_color = "rgba(0, 255, 0, 0.4)"
 
+# CSS with fixed double braces to avoid SyntaxError
 st.markdown(f"""
 <style>
     header {{ visibility:hidden; }}
@@ -137,7 +139,7 @@ st.markdown(f"""
 # 4. CYBER SECURITY AUTO SHUTDOWN
 if st.session_state.system_shutdown:
     play_sound("shutdown")
-    st.markdown("<div style='background:#d00000;color:white;height:100vh;width:100vw;position:fixed;top:0;left:0;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;'><h1>🚨 SYSTEM AUTO SHUTDOWN 🚨</h1><h2 style='background:white;color:red;padding:10px;'>CYBER ATTACK DETECTED</h2><p>System is locked for security. Enter Developer Reboot Key.</p></div>", unsafe_allow_html=True)
+    st.markdown("<div style='background:#d00000;color:white;height:100vh;width:100vw;position:fixed;top:0;left:0;z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;'><h1>🚨 SYSTEM AUTO SHUTDOWN 🚨</h1><h2 style='background:white;color:red;padding:10px;'>CYBER ATTACK DETECTED</h2><p>System is locked. Enter Developer Reboot Key.</p></div>", unsafe_allow_html=True)
     reboot = st.text_input("Enter Reboot Key:", type="password")
     if st.button("REBOOT SYSTEM"):
         if reboot == REBOOT_KEY:
@@ -153,7 +155,7 @@ kigali_tz = pytz.timezone('Africa/Kigali')
 kigali_time = datetime.now(kigali_tz).strftime("%H:%M:%S")
 st.markdown("<div class='stethoscope'>🩺</div>", unsafe_allow_html=True)
 st.markdown(f"<h2 style='text-align:center;color:#00d4ff;margin-top:0;'>{kigali_time}</h2>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center;'><span class='ai-online-led'></span>AI Gemini 2.5 is Online</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center;'><span class='ai-online-led'></span>AI Gemini 1.5 Flash is Online</p>", unsafe_allow_html=True)
 
 # 6. NAVIGATION
 st.divider()
@@ -170,8 +172,8 @@ st.divider()
 # PAGE: HOME
 # =========================
 if st.session_state.current_page == "🏠 HOME":
-    st.subheader("📱 Patient Biometric Registration")
-    tab1, tab2 = st.tabs(["Register New Patient", "Scan Fingerprint"])
+    st.subheader("📱 Patient Biometric Access")
+    tab1, tab2 = st.tabs(["New Registration", "Fingerprint Scan"])
     
     with tab1:
         with st.form("Register"):
@@ -215,14 +217,16 @@ if st.session_state.current_page == "🏠 HOME":
             user["temp"] = f"{random.uniform(36.5,38.5):.1f} °C"
             st.write(f"BP: {user['bp']} | Temp: {user['temp']}")
 
-        query = st.chat_input("Baza AI Muganga...")
-        if query:
+        prompt = st.chat_input("Baza AI Muganga (Gemini 1.5 Flash)...")
+        if prompt:
             if model:
                 try:
-                    res = model.generate_content(f"Uritwa BJ Nano v8 AI. Patient: {user['name']}, BP: {user['bp']}, Temp: {user['temp']}. Subiza mu Kinyarwanda: {query}")
-                    st.write(res.text)
-                    if "LAB:" in res.text.upper(): user["ai_tests"] = ["Blood Test", "Malaria Scan"]
-                    if "MITI:" in res.text.upper(): user["prescription"] = "Paracetamol, Vitamins"
+                    # System prompt logic for professional response
+                    sys_msg = f"Uritwa BJ Nano v8 AI. Patient: {user['name']}, BP: {user['bp']}, Temp: {user['temp']}. Subiza mu Kinyarwanda neza kandi kinyamwuga."
+                    response = model.generate_content(f"{sys_msg}\n\nQuestion: {prompt}")
+                    st.write(response.text)
+                    if "LAB:" in response.text.upper(): user["ai_tests"] = ["Blood Test", "Scan"]
+                    if "MITI:" in response.text.upper(): user["prescription"] = "AI Prescribed Medicine"
                 except Exception:
                     st.error("Muraho neza Muganga Ai ntarihafi jya mucyumba cyisuzumiro bagufashe")
             else:
@@ -250,7 +254,7 @@ elif st.session_state.current_page == "🧪 LAB":
         if st.button("FETCH LAB ORDERS"):
             if target in st.session_state.db:
                 p = st.session_state.db[target]
-                st.write(f"Patient: {p['name']} | Tests: {p['ai_tests']}")
+                st.write(f"Patient: {p['name']} | AI Tests: {p['ai_tests']}")
                 results = st.multiselect("Select Results:", ["Positive", "Negative", "Normal"])
                 if st.button("SAVE RESULTS"):
                     p["lab_results"] = results
@@ -305,6 +309,6 @@ elif st.session_state.current_page == "⚙️ ADMIN":
             st.rerun()
         df = pd.DataFrame.from_dict(st.session_state.db, orient="index")
         st.dataframe(df)
-        st.download_button("Download Data (CSV)", df.to_csv(), "system_data.csv")
+        st.download_button("Download Logs", df.to_csv(), "system_logs.csv")
 
 st.markdown(f"<div style='position:fixed;bottom:10px;right:20px;font-size:12px;color:#00d4ff;'>BJ Nano v8 Health Rwanda | {kigali_time} 🇷🇼</div>", unsafe_allow_html=True)
